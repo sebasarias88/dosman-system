@@ -1,0 +1,5 @@
+dist
+.wrangler
+src/routeTree.gen.ts
+supabase/migrations
+yarn.lock

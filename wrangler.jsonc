@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dosman-system",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "assets": {
+    // The React app is a single-page application: unknown paths load index.html.
+    "not_found_handling": "single-page-application",
+    // Only /api/* reaches the Worker; every other request is a free static asset.
+    "run_worker_first": ["/api/*"],
+  },
+  "r2_buckets": [
+    {
+      // Product photos and expense receipts. Read and written only through the Worker.
+      "binding": "MEDIA",
+      "bucket_name": "dosman-media",
+    },
+  ],
+  "vars": {
+    // Public values (safe in the browser too). Secrets go through `wrangler secret put`.
+    "SUPABASE_URL": "https://YOUR-PROJECT-REF.supabase.co",
+    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_REPLACE_ME",
+  },
+}
