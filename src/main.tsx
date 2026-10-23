@@ -24,6 +24,10 @@ declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router
   }
+  interface StaticDataRouteOption {
+    /** Full-screen work modules (POS, tables) use an icon-only sidebar. */
+    compactShell?: boolean
+  }
 }
 
 // Keep the cached staff context in sync with Supabase sessions (sign out in

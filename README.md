@@ -79,6 +79,21 @@ yarn deploy
 
 El sistema queda en `https://dosman-system.<cuenta>.workers.dev`.
 
+## PC de caja e impresora térmica (80 mm)
+
+1. Instalar el driver de la impresora (compatible ESC/POS de Epson), dejarla como **predeterminada**,
+   con papel de 80 mm y márgenes en cero.
+2. Crear un acceso directo de Chrome en el escritorio con impresión silenciosa (imprime sin preguntar):
+
+   ```
+   "C:\Program Files\Google\Chrome\Application\chrome.exe" --kiosk-printing --app=https://dosman-system.<cuenta>.workers.dev/pos
+   ```
+
+3. Si compran cajón monedero (puerto RJ11 de la impresora), activar en el driver la opción de
+   **abrir el cajón al imprimir**: así solo se abre al imprimir un recibo de cobro.
+4. En la caja, el botón de ajustes (arriba a la derecha) define si este equipo imprime el recibo al
+   cobrar y la comanda al enviar el pedido.
+
 ## Seguridad (resumen)
 
 - **RLS en todas las tablas.** Sin sesión no se ve nada. Cada empleado solo ve su sede.
