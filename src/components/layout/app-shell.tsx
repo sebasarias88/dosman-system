@@ -4,7 +4,7 @@ import { LogOut, Menu, X } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Logo } from '@/components/brand/logo'
 import { Button } from '@/components/ui/button'
-import { canUseModule, MODULE_GROUP_LABELS, MODULES, type ModuleGroup } from '@/config/modules'
+import { MODULE_GROUP_LABELS, modulesFor, type ModuleGroup } from '@/config/modules'
 import { setActiveBranchId } from '@/features/auth/active-branch'
 import { signOut } from '@/features/auth/auth-api'
 import { useStaff } from '@/features/auth/use-staff'
@@ -15,7 +15,7 @@ const GROUP_ORDER: ModuleGroup[] = ['operation', 'stock', 'management']
 
 function Navigation({ onNavigate }: { onNavigate?: () => void }) {
   const { profile, activeBranch } = useStaff()
-  const visible = MODULES.filter((m) => canUseModule(m, profile.role, activeBranch))
+  const visible = modulesFor(profile.role, activeBranch)
 
   return (
     <nav aria-label="Módulos" className="flex flex-col gap-6">
@@ -124,7 +124,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 /** Icon-only rail used on full-screen work modules (POS, tables) to leave room for the content. */
 function CompactRail({ onOpenMenu }: { onOpenMenu: () => void }) {
   const { profile, activeBranch } = useStaff()
-  const visible = MODULES.filter((m) => canUseModule(m, profile.role, activeBranch))
+  const visible = modulesFor(profile.role, activeBranch)
 
   return (
     <aside className="hidden w-[4.5rem] shrink-0 flex-col items-center gap-1 border-r border-line bg-surface py-3 lg:flex">

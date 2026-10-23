@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowUpRight } from 'lucide-react'
-import { canUseModule, MODULES } from '@/config/modules'
+import { modulesFor } from '@/config/modules'
 import { useStaff } from '@/features/auth/use-staff'
 
 export const Route = createFileRoute('/_app/')({
@@ -29,9 +29,7 @@ function greeting(): string {
 
 function HomeScreen() {
   const { profile, activeBranch } = useStaff()
-  const shortcuts = MODULES.filter(
-    (m) => m.key !== 'dashboard' && canUseModule(m, profile.role, activeBranch),
-  )
+  const shortcuts = modulesFor(profile.role, activeBranch).filter((m) => m.key !== 'dashboard')
   const firstName = profile.full_name.split(' ')[0]
 
   return (

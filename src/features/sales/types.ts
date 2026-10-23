@@ -1,6 +1,7 @@
 export type OrderType = 'table' | 'counter' | 'takeaway' | 'park' | 'delivery'
 export type OrderStatus = 'open' | 'paid' | 'cancelled'
 export type PaymentKind = 'cash' | 'digital' | 'credit'
+export type PrepStatus = 'pending' | 'preparing' | 'ready' | 'served'
 
 export interface PaymentMethod {
   code: string
@@ -9,11 +10,19 @@ export interface PaymentMethod {
   sort_order: number
 }
 
+export interface Zone {
+  id: string
+  name: string
+  sort_order: number
+  is_active: boolean
+}
+
 export interface DiningTable {
   id: string
   name: string
   zone_id: string | null
   sort_order: number
+  is_active: boolean
   zones: { name: string; sort_order: number } | null
 }
 
@@ -40,6 +49,9 @@ export interface OrderItem {
   add_ons: OrderAddOn[]
   line_total: number
   notes: string | null
+  requires_preparation: boolean
+  prep_status: PrepStatus
+  created_by: string
   created_at: string
   voided_at: string | null
   void_reason: string | null
@@ -153,5 +165,22 @@ export function describeOrder(
       return `Domicilio · ${order.customers?.name ?? ''}`
     default:
       return ORDER_TYPE_LABELS[order.order_type]
+  }
+}
+
+/** An item on the preparation screen, with the order it belongs to. */
+export interface KitchenItem {
+  id: string
+  order_id: string
+  product_name: string
+  variant_name: string
+  quantity: number
+  add_ons: OrderAddOn[]
+  notes: string | null
+  prep_status: Exclude<PrepStatus, 'served'>
+  created_at: string
+  orders: Pick<Order, 'order_number' | 'order_type' | 'park_note' | 'status' | 'created_at'> & {
+    dining_tables: { name: string } | null
+    customers: { name: string } | null
   }
 }

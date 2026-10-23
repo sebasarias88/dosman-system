@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { AppShell } from '@/components/layout/app-shell'
 import { staffContextQuery } from '@/features/auth/auth-api'
+import { BranchRealtime } from '@/features/sales/branch-realtime'
 
 /** Everything under this layout requires an active staff session. */
 export const Route = createFileRoute('/_app')({
@@ -17,6 +18,7 @@ export const Route = createFileRoute('/_app')({
 function AppLayout() {
   return (
     <AppShell>
+      <BranchRealtime />
       <Outlet />
     </AppShell>
   )

@@ -6,9 +6,12 @@ import type {
   CashSummary,
   Customer,
   DiningTable,
+  KitchenItem,
   Order,
   OrderType,
   PaymentMethod,
+  PrepStatus,
+  Zone,
 } from './types'
 
 /** Every sales query key starts with 'sales', so one invalidation refreshes them all. */
@@ -19,6 +22,7 @@ export const salesKeys = {
   movements: (sessionId: string) => ['sales', 'movements', sessionId] as const,
   sessions: (branchId: string) => ['sales', 'sessions', branchId] as const,
   openOrders: (branchId: string) => ['sales', 'open-orders', branchId] as const,
+  kitchen: (branchId: string) => ['sales', 'kitchen', branchId] as const,
   recentOrders: (sessionId: string) => ['sales', 'recent-orders', sessionId] as const,
 }
 
@@ -31,7 +35,7 @@ const ORDER_SELECT = `
   dining_tables(name),
   customers(id, name, phone, address),
   order_items(id, variant_id, product_name, variant_name, quantity, unit_price, add_ons, line_total, notes,
-              created_at, voided_at, void_reason),
+              requires_preparation, prep_status, created_by, created_at, voided_at, void_reason),
   payments(method_code, amount, cash_received, change_given)`
 
 function unwrap<T>(result: { data: unknown; error: unknown }): T {
@@ -63,12 +67,62 @@ export const tablesQuery = (branchId: string) =>
       unwrap<DiningTable[]>(
         await supabase
           .from('dining_tables')
-          .select('id, name, zone_id, sort_order, zones(name, sort_order)')
+          .select('id, name, zone_id, sort_order, is_active, zones(name, sort_order)')
           .eq('branch_id', branchId)
           .eq('is_active', true)
           .order('sort_order'),
       ),
   })
+
+/** Zones and tables of a branch, including hidden ones, for the table editor. */
+export const seatingQuery = (branchId: string) =>
+  queryOptions({
+    queryKey: ['tables', branchId, 'all'],
+    queryFn: async () => {
+      const [zones, tables] = await Promise.all([
+        supabase
+          .from('zones')
+          .select('id, name, sort_order, is_active')
+          .eq('branch_id', branchId)
+          .order('sort_order'),
+        supabase
+          .from('dining_tables')
+          .select('id, name, zone_id, sort_order, is_active, zones(name, sort_order)')
+          .eq('branch_id', branchId)
+          .order('sort_order'),
+      ])
+      return { zones: unwrap<Zone[]>(zones), tables: unwrap<DiningTable[]>(tables) }
+    },
+  })
+
+export async function saveZone(zone: {
+  id?: string
+  branch_id: string
+  name: string
+  sort_order: number
+  is_active: boolean
+}) {
+  const { id, ...fields } = zone
+  unwrap(
+    await (id ? supabase.from('zones').update(fields).eq('id', id) : supabase.from('zones').insert(fields)),
+  )
+}
+
+export async function saveTable(table: {
+  id?: string
+  branch_id: string
+  zone_id: string | null
+  name: string
+  sort_order: number
+  is_active: boolean
+}) {
+  const { id, ...fields } = table
+  unwrap(
+    await (id
+      ? supabase.from('dining_tables').update(fields).eq('id', id)
+      : supabase.from('dining_tables').insert(fields)),
+  )
+}
 
 export const customersQuery = queryOptions({
   queryKey: ['customers'],
@@ -173,8 +227,8 @@ export async function closeCashSession(input: {
 export const openOrdersQuery = (branchId: string) =>
   queryOptions({
     queryKey: salesKeys.openOrders(branchId),
-    // Until realtime arrives, keep devices in sync by polling.
-    refetchInterval: 10_000,
+    // Realtime refreshes this instantly; polling is only a safety net.
+    refetchInterval: 30_000,
     queryFn: async () =>
       unwrap<Order[]>(
         await supabase
@@ -264,4 +318,38 @@ export async function saveCustomer(input: {
   address: string
 }): Promise<string> {
   return unwrap<string>(await supabase.rpc('save_customer', { payload: input }))
+}
+
+export async function moveOrderTable(orderId: string, tableId: string): Promise<void> {
+  unwrap(await supabase.rpc('move_order_table', { p_order_id: orderId, p_table_id: tableId }))
+}
+
+// ---------------------------------------------------------------------------
+// Preparation screen
+// ---------------------------------------------------------------------------
+export const kitchenQuery = (branchId: string) =>
+  queryOptions({
+    queryKey: salesKeys.kitchen(branchId),
+    refetchInterval: 30_000,
+    queryFn: async () =>
+      unwrap<KitchenItem[]>(
+        await supabase
+          .from('order_items')
+          .select(
+            `id, order_id, product_name, variant_name, quantity, add_ons, notes, prep_status, created_at,
+             orders!inner(order_number, order_type, park_note, status, created_at, dining_tables(name), customers(name))`,
+          )
+          .eq('branch_id', branchId)
+          .eq('requires_preparation', true)
+          .is('voided_at', null)
+          .in('prep_status', ['pending', 'preparing', 'ready'])
+          .neq('orders.status', 'cancelled')
+          // Anything older than a day was surely delivered and just not marked.
+          .gte('created_at', new Date(Date.now() - 24 * 60 * 60_000).toISOString())
+          .order('created_at'),
+      ),
+  })
+
+export async function setPrepStatus(itemIds: string[], status: PrepStatus): Promise<number> {
+  return unwrap<number>(await supabase.rpc('set_prep_status', { p_item_ids: itemIds, p_status: status }))
 }

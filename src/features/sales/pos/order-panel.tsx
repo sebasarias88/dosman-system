@@ -63,7 +63,18 @@ interface OrderPanelProps {
   addingTo: Order | null
   onCancelAdding: () => void
   busy: boolean
+  /** False for waiters: they send orders, the cashier charges them. */
+  canCharge: boolean
   onSubmit: (payNow: boolean) => void
+}
+
+/** Order types this person can take in this branch. */
+export function orderTypesFor(branch: Branch, hasTables: boolean, canCharge: boolean): OrderType[] {
+  if (!canCharge) return hasTables ? ['table', 'park'] : ['park']
+  const types: OrderType[] = ['counter', 'takeaway', 'park']
+  if (hasTables) types.splice(2, 0, 'table')
+  if (branch.takes_delivery) types.push('delivery')
+  return types
 }
 
 export function OrderPanel({
@@ -77,11 +88,10 @@ export function OrderPanel({
   addingTo,
   onCancelAdding,
   busy,
+  canCharge,
   onSubmit,
 }: OrderPanelProps) {
-  const types: OrderType[] = ['counter', 'takeaway', 'park']
-  if (tables.length > 0) types.splice(2, 0, 'table')
-  if (branch.takes_delivery) types.push('delivery')
+  const types = orderTypesFor(branch, tables.length > 0, canCharge)
 
   const subtotal = cartTotal(lines)
   const deliveryFee = draft.type === 'delivery' ? (draft.deliveryFee ?? 0) : 0
@@ -103,7 +113,11 @@ export function OrderPanel({
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Tipo de pedido">
+            <div
+              className={cn('grid gap-1.5', types.length < 3 ? 'grid-cols-2' : 'grid-cols-3')}
+              role="radiogroup"
+              aria-label="Tipo de pedido"
+            >
               {types.map((type) => (
                 <button
                   key={type}
@@ -283,6 +297,10 @@ export function OrderPanel({
         {addingTo ? (
           <Button size="lg" disabled={lines.length === 0} loading={busy} onClick={() => onSubmit(false)}>
             Agregar al pedido
+          </Button>
+        ) : !canCharge ? (
+          <Button size="lg" disabled={Boolean(problem)} loading={busy} onClick={() => onSubmit(false)}>
+            Enviar pedido
           </Button>
         ) : payLater ? (
           <div className="grid grid-cols-2 gap-2">
