@@ -1,0 +1,4 @@
+# Local values for the Worker (`yarn dev`). Copy to .dev.vars.
+# They override the "vars" in wrangler.jsonc only on your machine.
+SUPABASE_URL=https://YOUR-PROJECT-REF.supabase.co
+SUPABASE_PUBLISHABLE_KEY=sb_publishable_REPLACE_ME
