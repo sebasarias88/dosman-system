@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { Link, useMatches, useNavigate } from '@tanstack/react-router'
 import { LogOut, Menu, X } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Logo } from '@/components/brand/logo'
@@ -121,15 +121,50 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   )
 }
 
+/** Icon-only rail used on full-screen work modules (POS, tables) to leave room for the content. */
+function CompactRail({ onOpenMenu }: { onOpenMenu: () => void }) {
+  const { profile, activeBranch } = useStaff()
+  const visible = MODULES.filter((m) => canUseModule(m, profile.role, activeBranch))
+
+  return (
+    <aside className="hidden w-[4.5rem] shrink-0 flex-col items-center gap-1 border-r border-line bg-surface py-3 lg:flex">
+      <Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={onOpenMenu}>
+        <Menu className="size-6" aria-hidden />
+      </Button>
+      <Logo variant="isotype" className="my-3 w-7 text-fg" />
+      <nav aria-label="Módulos" className="flex flex-1 flex-col items-center gap-1 overflow-y-auto">
+        {visible.map(({ key, path, label, icon: Icon }) => (
+          <Link
+            key={key}
+            to={path}
+            aria-label={label}
+            title={label}
+            activeOptions={{ exact: path === '/' }}
+            className="grid size-11 place-items-center rounded-xl text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
+            activeProps={{ className: 'bg-surface-3! text-fg!' }}
+          >
+            <Icon className="size-5" aria-hidden />
+          </Link>
+        ))}
+      </nav>
+    </aside>
+  )
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const compact = useMatches({ select: (matches) => matches.some((m) => m.staticData.compactShell) })
 
   return (
     <div className="flex h-full">
-      {/* PC and large tablets: fixed sidebar. */}
-      <aside className="hidden w-64 shrink-0 border-r border-line bg-surface lg:block">
-        <SidebarContent />
-      </aside>
+      {compact ? (
+        <CompactRail onOpenMenu={() => setMenuOpen(true)} />
+      ) : (
+        /* PC and large tablets: fixed sidebar. */
+        <aside className="hidden w-64 shrink-0 border-r border-line bg-surface lg:block">
+          <SidebarContent />
+        </aside>
+      )}
 
       {/* Phones and small tablets: top bar + drawer. */}
       <div className="flex min-w-0 flex-1 flex-col">
@@ -141,12 +176,15 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="size-11" aria-hidden />
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
+        <main className={cn('min-h-0 flex-1', compact ? 'overflow-hidden' : 'overflow-y-auto')}>
+          {children}
+        </main>
       </div>
 
       <div
         className={cn(
-          'fixed inset-0 z-30 bg-ink/70 transition-opacity lg:hidden',
+          'fixed inset-0 z-30 bg-ink/70 transition-opacity',
+          !compact && 'lg:hidden',
           menuOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         onClick={() => setMenuOpen(false)}
@@ -154,7 +192,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       />
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 w-[min(18rem,85vw)] border-r border-line bg-surface transition-transform lg:hidden',
+          'fixed inset-y-0 left-0 z-40 w-[min(18rem,85vw)] border-r border-line bg-surface transition-transform',
+          !compact && 'lg:hidden',
           menuOpen ? 'translate-x-0' : '-translate-x-full',
         )}
         aria-hidden={!menuOpen}

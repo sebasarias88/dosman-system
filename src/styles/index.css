@@ -80,6 +80,115 @@
   }
 }
 
+/* -----------------------------------------------------------------------------
+ * 80 mm thermal tickets. The printable width of an 80 mm roll is ~72 mm.
+ * When printing, only #print-root is shown.
+ * --------------------------------------------------------------------------- */
+#print-root {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+
+  html,
+  body {
+    height: auto;
+    background: #fff !important;
+  }
+
+  body > *:not(#print-root) {
+    display: none !important;
+  }
+
+  #print-root {
+    display: block;
+  }
+}
+
+.ticket {
+  width: 72mm;
+  padding: 2mm 3mm 8mm;
+  background: #fff;
+  color: #000;
+  font-family: 'Jost Variable', ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.ticket p {
+  margin: 0;
+}
+
+.ticket-logo {
+  width: 48mm;
+  margin: 0 auto 1mm;
+}
+
+.ticket-center {
+  text-align: center;
+}
+
+.ticket-muted {
+  color: #333;
+  font-size: 11px;
+}
+
+.ticket-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.ticket-huge {
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.ticket-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 2mm;
+}
+
+.ticket-strong {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.ticket-divider {
+  margin: 1.5mm 0;
+  border: 0;
+  border-top: 1px dashed #000;
+}
+
+.ticket-item {
+  margin-bottom: 1mm;
+}
+
+.ticket-sub {
+  padding-left: 4mm;
+}
+
+.ticket-note {
+  padding-left: 4mm;
+  font-style: italic;
+}
+
+.ticket-kitchen {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.ticket-footer {
+  margin-top: 2mm;
+  font-size: 10px;
+}
+
 @utility brand-mask {
   /* Renders an SVG from /brand as a silhouette tinted with the current text color. */
   background-color: currentColor;

@@ -3,6 +3,7 @@ import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
 import { Toaster } from 'sonner'
 import { OfflineGuard } from '@/components/layout/offline-guard'
 import { PwaUpdatePrompt } from '@/components/layout/pwa-update-prompt'
+import { PrintHost } from '@/features/printing/print-host'
 
 export interface RouterContext {
   queryClient: QueryClient
@@ -18,6 +19,7 @@ function RootLayout() {
       <Outlet />
       <OfflineGuard />
       <PwaUpdatePrompt />
+      <PrintHost />
       <Toaster theme="dark" position="top-center" richColors closeButton />
     </>
   )
