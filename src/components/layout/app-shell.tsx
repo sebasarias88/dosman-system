@@ -1,0 +1,176 @@
+import { useQueryClient } from '@tanstack/react-query'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { LogOut, Menu, X } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
+import { Logo } from '@/components/brand/logo'
+import { Button } from '@/components/ui/button'
+import { canUseModule, MODULE_GROUP_LABELS, MODULES, type ModuleGroup } from '@/config/modules'
+import { setActiveBranchId } from '@/features/auth/active-branch'
+import { signOut } from '@/features/auth/auth-api'
+import { useStaff } from '@/features/auth/use-staff'
+import { cn } from '@/lib/cn'
+import { ROLE_LABELS } from '@/types/app'
+
+const GROUP_ORDER: ModuleGroup[] = ['operation', 'stock', 'management']
+
+function Navigation({ onNavigate }: { onNavigate?: () => void }) {
+  const { profile, activeBranch } = useStaff()
+  const visible = MODULES.filter((m) => canUseModule(m, profile.role, activeBranch))
+
+  return (
+    <nav aria-label="Módulos" className="flex flex-col gap-6">
+      {GROUP_ORDER.map((group) => {
+        const items = visible.filter((m) => m.group === group)
+        if (items.length === 0) return null
+        return (
+          <div key={group}>
+            <p className="mb-2 px-3 text-xs font-medium tracking-[0.14em] text-fg-subtle uppercase">
+              {MODULE_GROUP_LABELS[group]}
+            </p>
+            <ul className="flex flex-col gap-0.5">
+              {items.map(({ key, path, label, icon: Icon }) => (
+                <li key={key}>
+                  <Link
+                    to={path}
+                    onClick={onNavigate}
+                    activeOptions={{ exact: path === '/' }}
+                    className="flex h-11 items-center gap-3 rounded-xl px-3 text-[0.95rem] text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
+                    activeProps={{ className: 'bg-surface-3! text-fg!' }}
+                  >
+                    <Icon className="size-[1.15rem] shrink-0" aria-hidden />
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      })}
+    </nav>
+  )
+}
+
+function BranchSwitcher() {
+  const { branches, activeBranch } = useStaff()
+  if (!activeBranch) return null
+
+  if (branches.length < 2) {
+    return (
+      <p className="rounded-xl bg-surface-2 px-3 py-2.5 text-sm">
+        <span className="block text-xs text-fg-subtle">Sede</span>
+        {activeBranch.name}
+      </p>
+    )
+  }
+
+  return (
+    <label className="block">
+      <span className="mb-1 block px-1 text-xs text-fg-subtle">Sede</span>
+      <select
+        value={activeBranch.id}
+        onChange={(e) => setActiveBranchId(e.target.value)}
+        className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3 text-sm"
+      >
+        {branches.map((b) => (
+          <option key={b.id} value={b.id}>
+            {b.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
+function UserCard() {
+  const { profile } = useStaff()
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
+
+  async function handleSignOut() {
+    await signOut()
+    queryClient.clear()
+    await navigate({ to: '/login', search: { redirect: undefined } })
+  }
+
+  return (
+    <div className="flex items-center gap-3 rounded-xl bg-surface-2 p-3">
+      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-brand-soft font-semibold text-fg">
+        {profile.full_name.charAt(0).toUpperCase()}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{profile.full_name}</p>
+        <p className="text-xs text-fg-subtle">{ROLE_LABELS[profile.role]}</p>
+      </div>
+      <Button variant="ghost" size="icon" aria-label="Cerrar sesión" onClick={() => void handleSignOut()}>
+        <LogOut className="size-5" aria-hidden />
+      </Button>
+    </div>
+  )
+}
+
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+  return (
+    <div className="flex h-full flex-col gap-6 p-4">
+      <Logo className="mx-2 mt-2 w-40 text-fg" />
+      <BranchSwitcher />
+      <div className="-mx-1 flex-1 overflow-y-auto px-1">
+        <Navigation onNavigate={onNavigate} />
+      </div>
+      <UserCard />
+    </div>
+  )
+}
+
+export function AppShell({ children }: { children: ReactNode }) {
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  return (
+    <div className="flex h-full">
+      {/* PC and large tablets: fixed sidebar. */}
+      <aside className="hidden w-64 shrink-0 border-r border-line bg-surface lg:block">
+        <SidebarContent />
+      </aside>
+
+      {/* Phones and small tablets: top bar + drawer. */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex h-14 items-center justify-between border-b border-line bg-surface px-3 lg:hidden">
+          <Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMenuOpen(true)}>
+            <Menu className="size-6" aria-hidden />
+          </Button>
+          <Logo className="w-28 text-fg" />
+          <span className="size-11" aria-hidden />
+        </header>
+
+        <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
+      </div>
+
+      <div
+        className={cn(
+          'fixed inset-0 z-30 bg-ink/70 transition-opacity lg:hidden',
+          menuOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
+        )}
+        onClick={() => setMenuOpen(false)}
+        aria-hidden
+      />
+      <aside
+        className={cn(
+          'fixed inset-y-0 left-0 z-40 w-[min(18rem,85vw)] border-r border-line bg-surface transition-transform lg:hidden',
+          menuOpen ? 'translate-x-0' : '-translate-x-full',
+        )}
+        aria-hidden={!menuOpen}
+        inert={!menuOpen}
+      >
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Cerrar menú"
+          className="absolute top-3 right-3"
+          onClick={() => setMenuOpen(false)}
+        >
+          <X className="size-6" aria-hidden />
+        </Button>
+        <SidebarContent onNavigate={() => setMenuOpen(false)} />
+      </aside>
+    </div>
+  )
+}
