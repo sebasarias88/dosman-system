@@ -48,6 +48,16 @@
   --color-danger: #e0675f;
   --color-danger-soft: rgb(224 103 95 / 0.14);
 
+  /* Charts: one blue hue (validated >= 3:1 on the dark surface). Heat steps go
+     dark -> light because on a dark surface "little" must recede. */
+  --color-chart: #3987e5;
+  --color-chart-hover: #6da7ec;
+  --color-heat-1: #184f95;
+  --color-heat-2: #256abf;
+  --color-heat-3: #3987e5;
+  --color-heat-4: #6da7ec;
+  --color-heat-5: #9ec5f4;
+
   --radius-card: 1rem;
 }
 

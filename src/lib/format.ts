@@ -46,3 +46,10 @@ export function formatElapsed(since: string, now: number): string {
   if (minutes < 60) return `${minutes} min`
   return `${Math.floor(minutes / 60)} h ${minutes % 60} min`
 }
+
+const compactFormatter = new Intl.NumberFormat('es-CO', { notation: 'compact', maximumFractionDigits: 1 })
+
+/** Chart axes: 1250000 -> "$ 1,3 M", 85000 -> "$ 85 mil". */
+export function formatCompactCurrency(value: number): string {
+  return `$ ${compactFormatter.format(value)}`
+}

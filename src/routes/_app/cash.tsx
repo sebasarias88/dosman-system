@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { requireModule } from '@/features/auth/require-module'
 import { useStaff } from '@/features/auth/use-staff'
+import { recordExpense } from '@/features/expenses/expenses-api'
+import { useExpenseMutation } from '@/features/expenses/use-expense-mutation'
 import { printTicket } from '@/features/printing/print-store'
 import { CashClosingTicket } from '@/features/printing/tickets'
 import { CashMovementDialog, CloseSessionDialog } from '@/features/sales/components/cash-dialogs'
@@ -22,6 +24,7 @@ import {
 import type { CashSession, CashSummary } from '@/features/sales/types'
 import { useSalesMutation } from '@/features/sales/use-sales-mutation'
 import { formatCurrency, formatDateTime, formatTime } from '@/lib/format'
+import { uploadMedia } from '@/lib/media'
 
 export const Route = createFileRoute('/_app/cash')({
   beforeLoad: requireModule('cash'),
@@ -108,6 +111,20 @@ function OpenSession({
   const [closing, setClosing] = useState(false)
 
   const movement = useSalesMutation(addCashMovement, 'Movimiento registrado')
+  // A cash out that paid a business expense is recorded as an expense paid
+  // from the drawer: the database creates the cash movement in the same step.
+  const expense = useExpenseMutation(
+    async (input: { amount: number; reason: string; categoryId: string; receipt: Blob | null }) =>
+      recordExpense({
+        branch_id: session.branch_id,
+        category_id: input.categoryId,
+        amount: input.amount,
+        description: input.reason,
+        receipt_key: input.receipt ? await uploadMedia(input.receipt, 'receipts') : null,
+        from_drawer: true,
+      }),
+    'Gasto registrado',
+  )
   const close = useSalesMutation(closeCashSession)
 
   return (
@@ -211,14 +228,16 @@ function OpenSession({
         key={movementKind ?? 'closed'}
         open={movementKind !== null}
         kind={movementKind ?? 'in'}
-        loading={movement.isPending}
+        loading={movement.isPending || expense.isPending}
         onCancel={() => setMovementKind(null)}
-        onConfirm={({ amount, reason }) =>
-          movement.mutate(
-            { sessionId: session.id, kind: movementKind ?? 'in', amount, reason },
-            { onSuccess: () => setMovementKind(null) },
-          )
-        }
+        onConfirm={({ amount, reason, categoryId, receipt }) => {
+          const done = { onSuccess: () => setMovementKind(null) }
+          if (categoryId) {
+            expense.mutate({ amount, reason, categoryId, receipt }, done)
+          } else {
+            movement.mutate({ sessionId: session.id, kind: movementKind ?? 'in', amount, reason }, done)
+          }
+        }}
       />
       <CloseSessionDialog
         open={closing}

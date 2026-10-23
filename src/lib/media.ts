@@ -14,6 +14,20 @@ export function mediaUrl(key: string): string {
   return `/api/media/${key}`
 }
 
+/** Receipts are private: they are fetched with the session token and opened as a blob. */
+export async function openPrivateMedia(key: string): Promise<void> {
+  // Open the tab first (inside the click) so the browser does not block it as a popup.
+  const tab = window.open('', '_blank')
+  const response = await fetch(mediaUrl(key), { headers: await authHeader() })
+  if (!response.ok) {
+    tab?.close()
+    throw new Error(await readError(response))
+  }
+  const url = URL.createObjectURL(await response.blob())
+  if (tab) tab.location.href = url
+  else window.location.assign(url)
+}
+
 function loadImage(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file)
