@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Ban, ChefHat, Plus, Printer, Receipt, Trash2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { Badge } from '@/components/ui/badge'
+import { useEffect, useState, type ReactNode } from 'react'
+import { Badge, type BadgeTone } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ReasonDialog } from '@/components/ui/reason-dialog'
 import { Sheet } from '@/components/ui/sheet'
@@ -10,11 +10,18 @@ import { KitchenTicket, ReceiptTicket } from '@/features/printing/tickets'
 import { cn } from '@/lib/cn'
 import { formatCurrency, formatElapsed, formatTime } from '@/lib/format'
 import { cancelOrder, paymentMethodsQuery, voidOrderItem } from '../sales-api'
-import { describeOrder, type Order } from '../types'
+import { describeOrder, type Order, type PrepStatus } from '../types'
 import { useSalesMutation } from '../use-sales-mutation'
 
+export const PREP_LABELS: Record<PrepStatus, { label: string; tone: BadgeTone }> = {
+  pending: { label: 'Pendiente', tone: 'neutral' },
+  preparing: { label: 'Preparando', tone: 'warning' },
+  ready: { label: 'Listo', tone: 'success' },
+  served: { label: 'Entregado', tone: 'neutral' },
+}
+
 /** Re-renders every 30 s so waiting times stay current. */
-function useNow(intervalMs = 30_000): number {
+export function useNow(intervalMs = 30_000): number {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), intervalMs)
@@ -67,6 +74,8 @@ interface OrderDetailProps {
   onAddItems: (order: Order) => void
   onPay: (order: Order) => void
   onClose: () => void
+  /** Extra actions for the screen that opened it (e.g. move table, mark delivered). */
+  extraActions?: ReactNode
 }
 
 /** Everything that can be done with an open order. */
@@ -78,6 +87,7 @@ export function OrderDetailSheet({
   onAddItems,
   onPay,
   onClose,
+  extraActions,
 }: OrderDetailProps) {
   const { data: methods = [] } = useQuery(paymentMethodsQuery)
   const [voiding, setVoiding] = useState<string | null>(null)
@@ -141,6 +151,13 @@ export function OrderDetailSheet({
                   <p className="text-sm text-fg-muted">+ {item.add_ons.map((a) => a.name).join(', ')}</p>
                 )}
                 {item.notes && <p className="text-sm text-warning">» {item.notes}</p>}
+                {item.requires_preparation && (
+                  <span className="mt-1.5 inline-block">
+                    <Badge tone={PREP_LABELS[item.prep_status].tone}>
+                      {PREP_LABELS[item.prep_status].label}
+                    </Badge>
+                  </span>
+                )}
               </div>
               <span className="tabular-nums">{formatCurrency(item.line_total)}</span>
               {canManage && (
@@ -205,6 +222,7 @@ export function OrderDetailSheet({
             Cuenta
           </Button>
         </div>
+        {extraActions}
         {canManage && (
           <Button
             variant="ghost"
@@ -220,7 +238,7 @@ export function OrderDetailSheet({
       <ReasonDialog
         open={voiding !== null}
         title="Anular producto"
-        description="El inventario se devuelve y el dueño recibe un aviso."
+        description="El dueño recibe un aviso. Si ya se estaba preparando, el inventario se cuenta como gastado."
         confirmLabel="Anular producto"
         suggestions={['Error al digitar', 'Cliente cambió de opinión', 'Producto dañado']}
         loading={voidItem.isPending}
@@ -232,7 +250,7 @@ export function OrderDetailSheet({
       <ReasonDialog
         open={cancelling}
         title={`Anular pedido #${order.order_number}`}
-        description="Se anulan todos los productos, el inventario se devuelve y el dueño recibe un aviso."
+        description="Se anulan todos los productos y el dueño recibe un aviso. Lo que no se alcanzó a preparar vuelve al inventario."
         confirmLabel="Anular pedido"
         suggestions={['Cliente se fue', 'Pedido duplicado', 'Error al digitar']}
         loading={cancel.isPending}

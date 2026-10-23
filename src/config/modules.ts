@@ -47,6 +47,9 @@ export interface AppModule {
   icon: LucideIcon
   group: ModuleGroup
   roles: readonly AppRole[]
+  /** Name and description waiters see (they use the module without charging). */
+  waiterLabel?: string
+  waiterDescription?: string
   /** Extra condition on the active branch (e.g. waiters only at the main branch). */
   branchRule?: (branch: Branch) => boolean
 }
@@ -75,9 +78,11 @@ export const MODULES: readonly AppModule[] = [
     path: '/pos',
     label: 'Caja',
     description: 'Tomar pedidos de mostrador, para llevar, parque y domicilio, y cobrarlos.',
+    waiterLabel: 'Tomar pedido',
+    waiterDescription: 'Pedidos de mesa y de parque. El cobro se hace en caja.',
     icon: ShoppingCart,
     group: 'operation',
-    roles: FLOOR,
+    roles: ['owner', 'admin', 'cashier', 'waiter'],
   },
   {
     key: 'tables',
@@ -212,6 +217,15 @@ export function canUseModule(module: AppModule, role: AppRole, branch: Branch | 
   if (!module.roles.includes(role)) return false
   if (module.branchRule && (!branch || !module.branchRule(branch))) return false
   return true
+}
+
+/** Modules this person can use in the active branch, with the names their role sees. */
+export function modulesFor(role: AppRole, branch: Branch | undefined): AppModule[] {
+  return MODULES.filter((m) => canUseModule(m, role, branch)).map((m) =>
+    role === 'waiter' && m.waiterLabel
+      ? { ...m, label: m.waiterLabel, description: m.waiterDescription ?? m.description }
+      : m,
+  )
 }
 
 export function getModule(key: ModuleKey): AppModule {

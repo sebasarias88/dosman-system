@@ -6,12 +6,35 @@ import { openCashSession } from '../sales-api'
 import { useSalesMutation } from '../use-sales-mutation'
 
 /** Shown wherever money is handled while the branch has no open cash session. */
-export function OpenSessionCard({ branchId, branchName }: { branchId: string; branchName: string }) {
+export function OpenSessionCard({
+  branchId,
+  branchName,
+  canOpen = true,
+}: {
+  branchId: string
+  branchName: string
+  /** Waiters can't open the drawer: they only see what to do. */
+  canOpen?: boolean
+}) {
   const [opening, setOpening] = useState<number | null>(null)
   const open = useSalesMutation(
     (amount: number) => openCashSession(branchId, amount),
     'Turno de caja abierto',
   )
+
+  if (!canOpen) {
+    return (
+      <div className="mx-auto flex w-full max-w-md flex-col gap-4 rounded-card border border-line bg-surface p-6">
+        <span className="grid size-12 place-items-center rounded-2xl bg-surface-2">
+          <Wallet className="size-6" aria-hidden />
+        </span>
+        <h2 className="text-xl font-semibold">La caja está cerrada</h2>
+        <p className="text-fg-muted">
+          Para tomar pedidos en {branchName}, alguien de caja debe abrir el turno primero.
+        </p>
+      </div>
+    )
+  }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
