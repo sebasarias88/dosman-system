@@ -1,6 +1,6 @@
 import type { Env } from './env'
 import { errorResponse, json } from './http'
-import { serveMedia, uploadMedia } from './media'
+import { deleteMedia, serveMedia, uploadMedia } from './media'
 
 /**
  * API Worker. Only requests to /api/* reach this code (see `run_worker_first`
@@ -19,8 +19,10 @@ export default {
         return await uploadMedia(request, env)
       }
 
-      if (pathname.startsWith('/api/media/') && request.method === 'GET') {
-        return await serveMedia(request, env, decodeURIComponent(pathname.slice('/api/media/'.length)))
+      if (pathname.startsWith('/api/media/')) {
+        const key = decodeURIComponent(pathname.slice('/api/media/'.length))
+        if (request.method === 'GET') return await serveMedia(request, env, key)
+        if (request.method === 'DELETE') return await deleteMedia(request, env, key)
       }
 
       return errorResponse(404, 'Ruta no encontrada')

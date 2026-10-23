@@ -35,8 +35,9 @@ public/brand/        Logos oficiales en SVG (sacados del manual de marca)
 
 ```bash
 yarn install
-cp .env.example .env.local   # completar con los datos de Supabase
-yarn dev                     # app + Worker en http://localhost:5173
+cp .env.example .env.local        # datos de Supabase para la app
+cp .dev.vars.example .dev.vars    # los mismos datos para el Worker en local
+yarn dev                          # app + Worker en http://localhost:5173
 ```
 
 Antes de cada commit: `yarn typecheck` y `yarn lint` deben quedar sin errores.

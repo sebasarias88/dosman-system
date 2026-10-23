@@ -63,6 +63,23 @@ export async function uploadMedia(request: Request, env: Env): Promise<Response>
   return json({ key }, { status: 201 })
 }
 
+/**
+ * DELETE /api/media/<key> — managers only, product photos only. Called when a
+ * photo is replaced or its product is deleted. Receipts are never deleted from
+ * the app: they are removed only by the owner's data cleanup.
+ */
+export async function deleteMedia(request: Request, env: Env, key: string): Promise<Response> {
+  if (!isSameOrigin(request)) return errorResponse(403, 'Origen no permitido')
+  if (!KEY_PATTERN.test(key) || !key.startsWith('products/')) return errorResponse(404, 'No encontrado')
+
+  const session = await getStaffSession(request, env)
+  if (!session) return errorResponse(401, 'Sesión no válida')
+  if (!isManager(session)) return errorResponse(403, 'No tienes permiso para borrar esta imagen')
+
+  await env.MEDIA.delete(key)
+  return new Response(null, { status: 204 })
+}
+
 /** GET /api/media/<key> */
 export async function serveMedia(request: Request, env: Env, key: string): Promise<Response> {
   if (!KEY_PATTERN.test(key)) return errorResponse(404, 'No encontrado')
