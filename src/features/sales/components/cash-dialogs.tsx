@@ -1,6 +1,9 @@
+import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
-import { Field, MoneyInput, TextInput } from '@/components/ui/field'
+import { Field, MoneyInput, SelectInput, TextInput } from '@/components/ui/field'
+import { ReceiptPicker } from '@/features/expenses/components/receipt-picker'
+import { expenseCategoriesQuery } from '@/features/expenses/expenses-api'
 
 function useModal(open: boolean) {
   const ref = useRef<HTMLDialogElement>(null)
@@ -52,23 +55,48 @@ function DialogFrame({
   )
 }
 
+export interface CashMovementInput {
+  amount: number
+  reason: string
+  /** Cash outs only: the expense category when the money paid a business expense. */
+  categoryId: string | null
+  receipt: Blob | null
+}
+
 interface MovementDialogProps {
   open: boolean
   kind: 'in' | 'out'
   loading: boolean
-  onConfirm: (input: { amount: number; reason: string }) => void
+  onConfirm: (input: CashMovementInput) => void
   onCancel: () => void
 }
 
-/** Cash that enters or leaves the drawer without being a sale. */
+/** Value of the "what is this cash out" select for money that is not an expense. */
+const NOT_EXPENSE = 'none'
+
+/**
+ * Cash that enters or leaves the drawer without being a sale. A cash out that
+ * pays a business expense (ice, a plumber) asks for its category, so it shows
+ * up in the expenses and in the real profit.
+ */
 export function CashMovementDialog({ open, kind, loading, onConfirm, onCancel }: MovementDialogProps) {
+  const { data: categories = [] } = useQuery({ ...expenseCategoriesQuery, enabled: kind === 'out' })
   const [amount, setAmount] = useState<number | null>(null)
   const [reason, setReason] = useState('')
-  const valid = (amount ?? 0) > 0 && reason.trim().length >= 3
+  const [category, setCategory] = useState('')
+  const [receipt, setReceipt] = useState<Blob | null>(null)
+  const valid = (amount ?? 0) > 0 && reason.trim().length >= 3 && (kind === 'in' || category !== '')
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    if (valid) onConfirm({ amount: amount ?? 0, reason: reason.trim() })
+    if (!valid) return
+    const isExpense = kind === 'out' && category !== NOT_EXPENSE
+    onConfirm({
+      amount: amount ?? 0,
+      reason: reason.trim(),
+      categoryId: isExpense ? category : null,
+      receipt: isExpense ? receipt : null,
+    })
   }
 
   return (
@@ -80,24 +108,46 @@ export function CashMovementDialog({ open, kind, loading, onConfirm, onCancel }:
       description={
         kind === 'in'
           ? 'Dinero que entra a la caja y no es una venta (ej. más sencillo).'
-          : 'Dinero que sale de la caja (ej. pago a un proveedor). Queda registrado.'
+          : 'Dinero que sale de la caja. Queda registrado y el dueño lo ve.'
       }
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Field label="Valor">
           {(props) => <MoneyInput {...props} autoFocus value={amount} onValueChange={setAmount} />}
         </Field>
+        {kind === 'out' && (
+          <Field label="¿En qué se gastó?">
+            {(props) => (
+              <SelectInput {...props} value={category} onChange={(e) => setCategory(e.target.value)}>
+                <option value="" disabled>
+                  Elegir…
+                </option>
+                {categories
+                  .filter((c) => c.is_active)
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      Gasto · {c.name}
+                    </option>
+                  ))}
+                <option value={NOT_EXPENSE}>No es un gasto (retiro, cambio, otro)</option>
+              </SelectInput>
+            )}
+          </Field>
+        )}
         <Field label="Motivo">
           {(props) => (
             <TextInput
               {...props}
               maxLength={200}
-              placeholder={kind === 'in' ? 'ej. Sencillo para cambio' : 'ej. Pago del hielo'}
+              placeholder={kind === 'in' ? 'ej. Sencillo para cambio' : 'ej. Bolsa de hielo'}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             />
           )}
         </Field>
+        {kind === 'out' && category !== '' && category !== NOT_EXPENSE && (
+          <ReceiptPicker value={receipt} onChange={setReceipt} />
+        )}
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onCancel} disabled={loading}>
             Cancelar

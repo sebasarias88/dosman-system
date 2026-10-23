@@ -5,19 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { formatStock } from '@/features/catalog/units'
 import { formatCurrency, formatDateTime } from '@/lib/format'
-import { mediaUrl } from '@/lib/media'
-import { supabase } from '@/lib/supabase'
+import { toast } from 'sonner'
+import { openPrivateMedia } from '@/lib/media'
 import { purchasesQuery } from '../inventory-api'
-
-/** Receipts are private: they are fetched with the session token and shown as a blob. */
-async function openReceipt(key: string) {
-  const { data } = await supabase.auth.getSession()
-  const response = await fetch(mediaUrl(key), {
-    headers: { authorization: `Bearer ${data.session?.access_token ?? ''}` },
-  })
-  if (!response.ok) return
-  window.open(URL.createObjectURL(await response.blob()), '_blank', 'noopener')
-}
 
 export function PurchasesHistory({ branchId }: { branchId: string }) {
   const { data: purchases = [], isPending } = useQuery(purchasesQuery(branchId))
@@ -67,7 +57,11 @@ export function PurchasesHistory({ branchId }: { branchId: string }) {
                   <Button
                     variant="secondary"
                     className="self-start"
-                    onClick={() => void openReceipt(purchase.receipt_key ?? '')}
+                    onClick={() =>
+                      openPrivateMedia(purchase.receipt_key ?? '').catch(() =>
+                        toast.error('No se pudo abrir la factura'),
+                      )
+                    }
                   >
                     <Receipt className="size-4" aria-hidden />
                     Ver factura
