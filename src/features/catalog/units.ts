@@ -46,3 +46,15 @@ const quantityFormatter = new Intl.NumberFormat('es-CO', { maximumFractionDigits
 export function formatQuantity(value: number): string {
   return quantityFormatter.format(value)
 }
+
+/**
+ * Human-readable stock: "25,5 kg", "500 g", "370 und". Small amounts stay in
+ * grams / milliliters so "0,05 kg" never appears.
+ */
+export function formatStock(unit: SupplyUnit, baseQuantity: number): string {
+  const info = UNITS[unit]
+  if (info.factor === 1 || Math.abs(baseQuantity) < info.factor) {
+    return `${formatQuantity(Math.round(baseQuantity * 10) / 10)} ${info.base}`
+  }
+  return `${formatQuantity(Math.round(baseToBulk(unit, baseQuantity) * 100) / 100)} ${info.bulk}`
+}
