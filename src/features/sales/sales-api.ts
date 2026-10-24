@@ -316,6 +316,7 @@ export async function saveCustomer(input: {
   name: string
   phone: string
   address: string
+  notes?: string
 }): Promise<string> {
   return unwrap<string>(await supabase.rpc('save_customer', { payload: input }))
 }

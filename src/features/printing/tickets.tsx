@@ -202,3 +202,46 @@ export function CashClosingTicket({ session, summary, branchName, staffName }: C
     </article>
   )
 }
+
+interface CustomerPaymentProps {
+  branchName: string
+  customerName: string
+  amount: number
+  methodName: string
+  balanceBefore: number
+  balanceAfter: number
+  staffName: string
+  at: Date
+}
+
+/** Proof of a payment back (abono) for the customer: what they paid and what they still owe. */
+export function CustomerPaymentTicket({
+  branchName,
+  customerName,
+  amount,
+  methodName,
+  balanceBefore,
+  balanceAfter,
+  staffName,
+  at,
+}: CustomerPaymentProps) {
+  return (
+    <article className="ticket">
+      <Header branchName={branchName} title="COMPROBANTE DE ABONO" />
+      <Divider />
+      <Row label="Fecha" value={formatDateTime(at)} />
+      <Row label="Cliente" value={customerName} />
+      <Row label="Recibió" value={staffName} />
+      <Divider />
+      <Row label="Debía" value={formatCurrency(balanceBefore)} />
+      <Row label={`Abono (${methodName})`} value={formatCurrency(amount)} strong />
+      <Row
+        label={balanceAfter > 0 ? 'Queda debiendo' : 'Saldo'}
+        value={formatCurrency(balanceAfter)}
+        strong
+      />
+      {balanceAfter <= 0 && <p className="ticket-center">¡Cuenta al día! Gracias.</p>}
+      <p className="ticket-center ticket-footer">Documento interno</p>
+    </article>
+  )
+}

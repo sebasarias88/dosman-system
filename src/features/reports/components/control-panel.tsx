@@ -1,4 +1,5 @@
-import { Ban, PackageX, ShoppingBag, Wallet } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { ArrowRight, Ban, PackageX, ShoppingBag, Wallet } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import { formatCurrency } from '@/lib/format'
@@ -36,40 +37,50 @@ function Row({
 export function ControlPanel({ totals }: { totals: ReportTotals }) {
   const cash = totals.cash_difference
   return (
-    <ul className="flex flex-col divide-y divide-line">
-      <Row
-        icon={<Wallet className="size-4" aria-hidden />}
-        label="Diferencias de caja"
-        value={`${cash > 0 ? '+' : ''}${formatCurrency(cash)}`}
-        detail={
-          totals.short_closings > 0
-            ? `${totals.short_closings} ${totals.short_closings === 1 ? 'cierre con faltante' : 'cierres con faltante'}`
-            : 'Ningún cierre con faltante'
-        }
-        alert={cash < 0 || totals.short_closings > 0}
-      />
-      <Row
-        icon={<Ban className="size-4" aria-hidden />}
-        label="Productos anulados"
-        value={formatCurrency(totals.voided_value)}
-        detail={`${totals.voided_items} ${totals.voided_items === 1 ? 'anulación' : 'anulaciones'} · revisa en Actividad quién y por qué`}
-        alert={totals.voided_items > 0}
-      />
-      <Row
-        icon={<ShoppingBag className="size-4" aria-hidden />}
-        label="Pedidos cancelados"
-        value={String(totals.cancelled_orders)}
-        detail="Pedidos que se abrieron y no se cobraron"
-        alert={totals.cancelled_orders > 0}
-      />
-      <Row
-        icon={<PackageX className="size-4" aria-hidden />}
-        label="Pérdidas de inventario"
-        value={formatCurrency(totals.inventory_loss)}
-        detail={`Mermas ${formatCurrency(totals.waste_cost)} · faltantes en conteos ${formatCurrency(totals.adjustment_cost)}`}
-        alert={totals.adjustment_cost > 0}
-      />
-    </ul>
+    <div className="flex flex-col gap-2">
+      <ul className="flex flex-col divide-y divide-line">
+        <Row
+          icon={<Wallet className="size-4" aria-hidden />}
+          label="Diferencias de caja"
+          value={`${cash > 0 ? '+' : ''}${formatCurrency(cash)}`}
+          detail={
+            totals.short_closings > 0
+              ? `${totals.short_closings} ${totals.short_closings === 1 ? 'cierre con faltante' : 'cierres con faltante'}`
+              : 'Ningún cierre con faltante'
+          }
+          alert={cash < 0 || totals.short_closings > 0}
+        />
+        <Row
+          icon={<Ban className="size-4" aria-hidden />}
+          label="Productos anulados"
+          value={formatCurrency(totals.voided_value)}
+          detail={`${totals.voided_items} ${totals.voided_items === 1 ? 'anulación' : 'anulaciones'}`}
+          alert={totals.voided_items > 0}
+        />
+        <Row
+          icon={<ShoppingBag className="size-4" aria-hidden />}
+          label="Pedidos cancelados"
+          value={String(totals.cancelled_orders)}
+          detail="Pedidos que se abrieron y no se cobraron"
+          alert={totals.cancelled_orders > 0}
+        />
+        <Row
+          icon={<PackageX className="size-4" aria-hidden />}
+          label="Pérdidas de inventario"
+          value={formatCurrency(totals.inventory_loss)}
+          detail={`Mermas ${formatCurrency(totals.waste_cost)} · faltantes en conteos ${formatCurrency(totals.adjustment_cost)}`}
+          alert={totals.adjustment_cost > 0}
+        />
+      </ul>
+      <Link
+        to="/activity"
+        search={{ period: 'week', severity: 'alerts', group: 'all' }}
+        className="inline-flex items-center gap-1 self-start text-sm text-fg-muted underline-offset-4 hover:text-fg hover:underline"
+      >
+        Ver quién lo hizo y por qué en Actividad
+        <ArrowRight className="size-3.5" aria-hidden />
+      </Link>
+    </div>
   )
 }
 
