@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { authHeader, readApiError } from './api'
 
 export type MediaFolder = 'products' | 'receipts'
 
@@ -70,20 +70,8 @@ export async function optimizeImage(file: File, folder: MediaFolder): Promise<Bl
   return blob
 }
 
-async function authHeader(): Promise<Record<string, string>> {
-  const { data } = await supabase.auth.getSession()
-  const token = data.session?.access_token
-  if (!token) throw new Error('Tu sesión expiró. Vuelve a ingresar.')
-  return { authorization: `Bearer ${token}` }
-}
-
 async function readError(response: Response): Promise<string> {
-  try {
-    const body = (await response.json()) as { error?: string }
-    return body.error ?? 'No se pudo subir la imagen.'
-  } catch {
-    return 'No se pudo subir la imagen.'
-  }
+  return readApiError(response, 'No se pudo subir la imagen.')
 }
 
 /** Uploads an already optimized image and returns its R2 key. */
