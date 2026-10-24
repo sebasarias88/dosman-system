@@ -2,3 +2,7 @@
 # They override the "vars" in wrangler.jsonc only on your machine.
 SUPABASE_URL=https://YOUR-PROJECT-REF.supabase.co
 SUPABASE_PUBLISHABLE_KEY=sb_publishable_REPLACE_ME
+# Secrets (never commit the real values). Needed only to test staff
+# accounts and Telegram locally.
+SUPABASE_SECRET_KEY=sb_secret_REPLACE_ME
+TELEGRAM_BOT_TOKEN=

@@ -74,10 +74,25 @@ Antes de cada commit: `yarn typecheck` y `yarn lint` deben quedar sin errores.
 ```bash
 npx wrangler login
 npx wrangler r2 bucket create dosman-media
+# Clave secreta de Supabase (Project Settings → API Keys → Secret keys → sb_secret_...).
+# Solo la usa el servidor para crear empleados y enviar avisos; nunca llega al navegador.
+npx wrangler secret put SUPABASE_SECRET_KEY
 yarn deploy
 ```
 
-El sistema queda en `https://dosman-system.<cuenta>.workers.dev`.
+El sistema queda en `https://dosman-system.<cuenta>.workers.dev`. Los demás empleados los crea el
+dueño desde **Empleados**.
+
+### 3. Avisos por Telegram (opcional, gratis)
+
+1. En Telegram, abrir **@BotFather**, enviar `/newbot` y ponerle nombre (ej. _Dosman Alertas_).
+   BotFather entrega un token como `123456789:AA...`.
+2. Guardarlo en el servidor: `npx wrangler secret put TELEGRAM_BOT_TOKEN`.
+3. El dueño le escribe "hola" al bot (o lo agrega al grupo de los dueños) y en
+   **Ajustes → Notificaciones** toca _Buscar chats_ y elige el chat. Llega un mensaje de prueba.
+
+Los avisos salen cada 5 minutos (alertas, cierres de caja, inventario bajo) y cada mañana a las
+5:30 llega el resumen del día anterior. Los gastos fijos del día también se registran a esa hora.
 
 ## PC de caja e impresora térmica (80 mm)
 
@@ -105,3 +120,7 @@ El sistema queda en `https://dosman-system.<cuenta>.workers.dev`.
   generan avisos al dueño.
 - **Roles y sede** se guardan en `app_metadata`, que solo el servidor puede escribir; nadie puede
   subirse de rol a sí mismo.
+- **La clave secreta de Supabase vive solo en el Worker** (secreto de Cloudflare). Se usa para crear
+  y editar empleados (solo el dueño) y para entregar avisos; las reglas del negocio siguen en la base
+  de datos (siempre queda al menos un dueño activo, nadie se quita su propio rol).
+- **Empleados desactivados no pueden entrar**, pero su historial se conserva.

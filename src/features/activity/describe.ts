@@ -17,6 +17,14 @@ const money = (d: Details, key: string) => formatCurrency(num(d, key))
 const reason = (d: Details) => (str(d, 'reason') ? `Motivo: ${str(d, 'reason')}` : undefined)
 const order = (d: Details) => `pedido #${num(d, 'order_number')}`
 
+const ROLE_NAMES: Record<string, string> = {
+  owner: 'dueño',
+  admin: 'administrador',
+  cashier: 'caja',
+  waiter: 'mesero',
+  kitchen: 'preparación',
+}
+
 const PURCHASE_PAYMENT: Record<string, string> = {
   cash_drawer: 'pagada con dinero de la caja',
   credit: 'a crédito con el proveedor',
@@ -163,6 +171,38 @@ export function describeEvent(entry: ActivityEntry, branchNames: Map<string, str
         title: `El costo de ${str(d, 'name')} cambió: ${formatUnitCost(num(d, 'old_unit_cost'))} → ${formatUnitCost(num(d, 'new_unit_cost'))} por ${base}`,
       }
     }
+
+    // Staff and settings ------------------------------------------------------
+    case 'staff.created':
+      return {
+        title: `Creó el empleado ${str(d, 'name')} (${ROLE_NAMES[str(d, 'role')] ?? str(d, 'role')})`,
+        detail: `Usuario: ${str(d, 'username')}`,
+      }
+    case 'staff.updated': {
+      const changes = [
+        d.old_role
+          ? `rol: ${ROLE_NAMES[str(d, 'old_role')] ?? str(d, 'old_role')} → ${ROLE_NAMES[str(d, 'new_role')] ?? str(d, 'new_role')}`
+          : '',
+        d.is_active === false ? 'quedó desactivado' : d.is_active === true ? 'volvió a estar activo' : '',
+        d.pin_changed ? 'se le cambió el PIN' : '',
+        d.branch_changed ? 'cambió de sede' : '',
+        d.old_name ? `antes se llamaba ${str(d, 'old_name')}` : '',
+      ].filter(Boolean)
+      return { title: `Cambió el empleado ${str(d, 'name')}`, detail: changes.join(' · ') || undefined }
+    }
+    case 'branch.updated':
+      return {
+        title: `Cambió los ajustes de la sede ${str(d, 'name')}`,
+        detail: `Mesas: ${d.uses_waiters ? 'sí' : 'no'} · Domicilios: ${d.takes_delivery ? 'sí' : 'no'} · El día termina a las ${str(d, 'day_cutoff')}`,
+      }
+    case 'payment_method.created':
+      return { title: `Agregó el medio de pago ${str(d, 'name')}` }
+    case 'payment_method.updated':
+      return {
+        title: `Cambió el medio de pago ${str(d, 'name')}${d.is_active === false ? ' (apagado)' : ''}`,
+      }
+    case 'settings.notifications':
+      return { title: 'Cambió los ajustes de notificaciones' }
     default:
       return { title: entry.action }
   }
@@ -180,6 +220,11 @@ export const ACTIVITY_GROUPS = [
   },
   { id: 'expenses', label: 'Gastos', prefixes: ['expense.'] },
   { id: 'prices', label: 'Precios y costos', prefixes: ['product_variant.', 'add_on.', 'supply.'] },
+  {
+    id: 'admin',
+    label: 'Empleados y ajustes',
+    prefixes: ['staff.', 'branch.', 'payment_method.', 'settings.'],
+  },
 ] as const
 
 export type ActivityGroup = (typeof ACTIVITY_GROUPS)[number]['id']

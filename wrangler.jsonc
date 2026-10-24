@@ -18,8 +18,16 @@
       "bucket_name": "dosman-media",
     },
   ],
+  "triggers": {
+    // Free plan: delivers queued notifications every 5 minutes, and at 5:30 a.m.
+    // Colombia time (10:30 UTC, after the business day closes) enters the fixed
+    // expenses and sends yesterday's summary.
+    "crons": ["*/5 * * * *", "30 10 * * *"],
+  },
   "vars": {
-    // Public values (safe in the browser too). Secrets go through `wrangler secret put`.
+    // Public values (safe in the browser too). Secrets go through `wrangler secret put`:
+    //   SUPABASE_SECRET_KEY  (staff accounts and notifications)
+    //   TELEGRAM_BOT_TOKEN   (bot created with @BotFather)
     "SUPABASE_URL": "https://YOUR-PROJECT-REF.supabase.co",
     "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_REPLACE_ME",
   },
