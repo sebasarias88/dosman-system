@@ -13,6 +13,12 @@ export interface Env {
   SUPABASE_SECRET_KEY?: string
   /** Secret (wrangler secret put). Token of the Telegram bot from @BotFather. */
   TELEGRAM_BOT_TOKEN?: string
+  /** Workers AI (help assistant). Free allowance: 10,000 neurons per day. */
+  AI?: Ai
+  /** Optional: another Workers AI model id for the assistant. */
+  ASSISTANT_MODEL?: string
+  /** Local tests only: "on" answers with a canned reply instead of calling the AI. */
+  ASSISTANT_FAKE?: string
   /** Local tests only: points to a fake Telegram server. */
   TELEGRAM_API_URL?: string
 }

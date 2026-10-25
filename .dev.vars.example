@@ -6,3 +6,5 @@ SUPABASE_PUBLISHABLE_KEY=sb_publishable_REPLACE_ME
 # accounts and Telegram locally.
 SUPABASE_SECRET_KEY=sb_secret_REPLACE_ME
 TELEGRAM_BOT_TOKEN=
+# Help assistant: Workers AI only works when deployed. "on" = canned test replies locally.
+ASSISTANT_FAKE=on

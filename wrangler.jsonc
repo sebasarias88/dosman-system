@@ -18,6 +18,8 @@
       "bucket_name": "dosman-media",
     },
   ],
+  // Workers AI for the help assistant ("Ayuda"). Free: 10,000 neurons per day.
+  "ai": { "binding": "AI" },
   "triggers": {
     // Free plan: delivers queued notifications every 5 minutes, and at 5:30 a.m.
     // Colombia time (10:30 UTC, after the business day closes) enters the fixed

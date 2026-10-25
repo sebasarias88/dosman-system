@@ -72,6 +72,9 @@ export default defineConfig({
       },
       devOptions: { enabled: false },
     }),
-    cloudflare(),
+    // Local dev never connects to the real Cloudflare account: the AI binding
+    // (help assistant) only works once deployed. Locally the assistant answers
+    // with a test reply when ASSISTANT_FAKE=on is set in .dev.vars.
+    cloudflare({ remoteBindings: false }),
   ],
 })
