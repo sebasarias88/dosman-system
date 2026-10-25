@@ -45,18 +45,21 @@ export function SupplyLines({
   const patch = (key: string, values: Partial<DraftLine>) =>
     onChange(lines.map((l) => (l.key === key ? { ...l, ...values } : l)))
 
+  // PC and tablet: one row per supply. Phones: a small card per supply
+  // (supply on top, numbers below), so nothing has to scroll sideways.
   const columns = cn(
-    'grid items-start gap-2',
+    'sm:grid sm:min-w-[34rem] sm:items-start sm:gap-2',
     withTotal && sendLabel
-      ? 'grid-cols-[1fr_6.5rem_8.5rem_6.5rem_auto]'
+      ? 'sm:grid-cols-[1fr_6.5rem_8.5rem_6.5rem_auto]'
       : withTotal
-        ? 'grid-cols-[1fr_7rem_9rem_auto]'
-        : 'grid-cols-[1fr_8rem_auto]',
+        ? 'sm:grid-cols-[1fr_7rem_9rem_auto]'
+        : 'sm:grid-cols-[1fr_8rem_auto]',
   )
+  const mobileLabel = 'mb-1 block text-xs text-fg-subtle sm:hidden'
 
   return (
-    <div className="flex flex-col gap-2 overflow-x-auto">
-      <div className={cn(columns, 'min-w-[34rem] px-1 text-xs text-fg-subtle')}>
+    <div className="flex flex-col gap-2 sm:overflow-x-auto">
+      <div className={cn(columns, 'hidden px-1 text-xs text-fg-subtle sm:grid')}>
         <span>Insumo</span>
         <span>Cantidad</span>
         {withTotal && <span>Valor pagado</span>}
@@ -73,8 +76,14 @@ export function SupplyLines({
           stock !== undefined &&
           line.quantity * UNITS[supply.unit].factor > stock
         return (
-          <div key={line.key} className={cn(columns, 'min-w-[34rem]')}>
-            <div>
+          <div
+            key={line.key}
+            className={cn(
+              columns,
+              'grid grid-cols-2 gap-2 rounded-xl border border-line p-3 sm:rounded-none sm:border-0 sm:p-0',
+            )}
+          >
+            <div className="col-span-2 sm:col-span-1">
               <SelectInput
                 aria-label="Insumo"
                 value={line.supplyId}
@@ -95,28 +104,38 @@ export function SupplyLines({
                 </p>
               )}
             </div>
-            <QuantityInput
-              aria-label="Cantidad"
-              value={line.quantity}
-              suffix={bulk}
-              onValueChange={(quantity) => patch(line.key, { quantity })}
-            />
-            {withTotal && (
-              <MoneyInput
-                aria-label="Valor pagado"
-                value={line.total}
-                onValueChange={(total) => patch(line.key, { total })}
+            <div>
+              <span className={mobileLabel}>Cantidad</span>
+              <QuantityInput
+                aria-label="Cantidad"
+                value={line.quantity}
+                suffix={bulk}
+                onValueChange={(quantity) => patch(line.key, { quantity })}
               />
+            </div>
+            {withTotal && (
+              <div>
+                <span className={mobileLabel}>Valor pagado</span>
+                <MoneyInput
+                  aria-label="Valor pagado"
+                  value={line.total}
+                  onValueChange={(total) => patch(line.key, { total })}
+                />
+              </div>
             )}
             {sendLabel && (
-              <QuantityInput
-                aria-label={sendLabel}
-                value={line.send}
-                suffix={bulk}
-                onValueChange={(send) => patch(line.key, { send })}
-              />
+              <div>
+                <span className={mobileLabel}>{sendLabel}</span>
+                <QuantityInput
+                  aria-label={sendLabel}
+                  value={line.send}
+                  suffix={bulk}
+                  onValueChange={(send) => patch(line.key, { send })}
+                />
+              </div>
             )}
             <Button
+              className="self-end justify-self-end sm:self-auto"
               variant="ghost"
               size="icon"
               aria-label={`Quitar ${supply?.name ?? 'renglón'}`}

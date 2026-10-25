@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { useStaff } from '@/features/auth/use-staff'
+import { setRealtimeConnected } from '@/lib/realtime-status'
 import { supabase } from '@/lib/supabase'
 import { inventoryKeys } from '@/features/inventory/inventory-api'
 import { salesKeys } from './sales-api'
@@ -20,9 +21,11 @@ export function BranchRealtime() {
   useEffect(() => {
     if (!branchId) return
     let timer: ReturnType<typeof setTimeout> | undefined
+    // Charging an order fires several changes (order, items, payments) in a
+    // few milliseconds: wait a moment and refresh once, to keep egress low.
     const refresh = () => {
       clearTimeout(timer)
-      timer = setTimeout(() => void queryClient.invalidateQueries({ queryKey: salesKeys.all }), 250)
+      timer = setTimeout(() => void queryClient.invalidateQueries({ queryKey: salesKeys.all }), 800)
     }
     const refreshTransfers = () => void queryClient.invalidateQueries({ queryKey: inventoryKeys.all })
     const filter = `branch_id=eq.${branchId}`
@@ -36,10 +39,17 @@ export function BranchRealtime() {
         { event: '*', schema: 'public', table: 'transfers', filter: `to_branch_id=eq.${branchId}` },
         refreshTransfers,
       )
-      .subscribe()
+      .subscribe((status) => {
+        const live = status === 'SUBSCRIBED'
+        setRealtimeConnected(live)
+        // Connected again (or just lost): refresh once. That catches up what was
+        // missed and lets the live screens switch polling on or off.
+        if (live || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') refresh()
+      })
 
     return () => {
       clearTimeout(timer)
+      setRealtimeConnected(false)
       void supabase.removeChannel(channel)
     }
   }, [branchId, queryClient])

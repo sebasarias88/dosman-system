@@ -1,7 +1,13 @@
+import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, TriangleAlert } from 'lucide-react'
 import { modulesFor } from '@/config/modules'
+import { alertCountsQuery } from '@/features/activity/activity-api'
 import { useStaff } from '@/features/auth/use-staff'
+import { businessToday } from '@/features/reports/periods'
+import { overviewQuery } from '@/features/reports/reports-api'
+import { cn } from '@/lib/cn'
+import { formatCurrency } from '@/lib/format'
 
 export const Route = createFileRoute('/_app/')({
   component: HomeScreen,
@@ -27,6 +33,56 @@ function greeting(): string {
   return 'Buenas noches'
 }
 
+/** Today at a glance for owners and admins: sales of both branches and alerts. */
+function TodaySummary() {
+  const today = businessToday()
+  const { data } = useQuery(overviewQuery({ branchId: null, from: today, to: today }))
+  const { data: alerts } = useQuery(alertCountsQuery({ from: today, to: today, branchId: null }))
+  if (!data) return null
+  const alertCount = (alerts?.warning ?? 0) + (alerts?.critical ?? 0)
+
+  return (
+    <section aria-label="Hoy" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="rounded-card border border-line bg-surface p-5">
+        <p className="text-sm text-fg-muted">Ventas de hoy</p>
+        <p className="text-2xl font-semibold tabular-nums">{formatCurrency(data.totals.sales)}</p>
+        <p className="mt-1 text-xs text-fg-subtle">
+          {data.branches.map((b) => `${b.name}: ${formatCurrency(b.sales)}`).join(' · ')}
+        </p>
+      </div>
+      <div className="rounded-card border border-line bg-surface p-5">
+        <p className="text-sm text-fg-muted">Pedidos cobrados</p>
+        <p className="text-2xl font-semibold tabular-nums">{data.totals.orders}</p>
+        <p className="mt-1 text-xs text-fg-subtle">
+          Ticket promedio {formatCurrency(data.totals.average_ticket)}
+        </p>
+      </div>
+      <div className="rounded-card border border-line bg-surface p-5">
+        <p className="text-sm text-fg-muted">Ganancia bruta de hoy</p>
+        <p className="text-2xl font-semibold tabular-nums">{formatCurrency(data.totals.gross_profit)}</p>
+        <p className="mt-1 text-xs text-fg-subtle">Ventas menos el costo de las recetas</p>
+      </div>
+      <Link
+        to="/activity"
+        search={{ period: 'today', severity: 'alerts', group: 'all' }}
+        className={cn(
+          'rounded-card border p-5 transition-colors hover:border-line-strong',
+          (alerts?.critical ?? 0) > 0 ? 'border-danger/40 bg-danger-soft' : 'border-line bg-surface',
+        )}
+      >
+        <p className="flex items-center gap-2 text-sm text-fg-muted">
+          <TriangleAlert className="size-4" aria-hidden />
+          Alertas de hoy
+        </p>
+        <p className="text-2xl font-semibold tabular-nums">{alertCount}</p>
+        <p className="mt-1 text-xs text-fg-subtle">
+          {alertCount === 0 ? 'Todo en orden' : 'Anulaciones, descuentos, faltantes… Toca para ver'}
+        </p>
+      </Link>
+    </section>
+  )
+}
+
 function HomeScreen() {
   const { profile, activeBranch } = useStaff()
   const shortcuts = modulesFor(profile.role, activeBranch).filter((m) => m.key !== 'dashboard')
@@ -41,6 +97,8 @@ function HomeScreen() {
         </h1>
         {activeBranch && <p className="mt-1 text-fg-muted">{activeBranch.name}</p>}
       </header>
+
+      {(profile.role === 'owner' || profile.role === 'admin') && <TodaySummary />}
 
       <section aria-label="Accesos rápidos" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {shortcuts.map(({ key, path, label, description, icon: Icon }) => (

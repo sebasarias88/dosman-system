@@ -3,7 +3,9 @@ import { QueryClient } from '@tanstack/react-query'
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30_000,
+      // Data stays fresh for a minute: fewer repeated requests (Supabase egress).
+      // Live screens don't depend on this: Realtime refreshes them on every change.
+      staleTime: 60_000,
       retry: 1,
       refetchOnWindowFocus: true,
     },
