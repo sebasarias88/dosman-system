@@ -25,6 +25,8 @@ import {
 import { exportReportXlsx, printReport } from '@/features/reports/report-export'
 import { overviewQuery, productsReportQuery } from '@/features/reports/reports-api'
 import { ORDER_TYPE_LABELS } from '@/features/sales/types'
+import { MonthlyHistory } from '@/features/storage/components/monthly-history'
+import { cleanedBeforeQuery } from '@/features/storage/storage-api'
 import { cn } from '@/lib/cn'
 import { formatCurrency } from '@/lib/format'
 
@@ -91,6 +93,8 @@ function ReportsScreen() {
   const scopeName = branches.find((b) => b.id === branchId)?.name ?? 'Las dos sedes'
 
   const overview = useQuery(overviewQuery(filters))
+  const { data: cleanedBefore } = useQuery(cleanedBeforeQuery)
+  const touchesCleaned = Boolean(cleanedBefore && range.from < cleanedBefore)
   const products = useQuery(productsReportQuery(filters))
   const [exporting, setExporting] = useState(false)
 
@@ -211,6 +215,16 @@ function ReportsScreen() {
           ))}
         </div>
       </div>
+
+      {touchesCleaned && (
+        <div className="flex flex-col gap-4">
+          <p className="rounded-xl bg-warning-soft px-4 py-3 text-sm text-warning">
+            El detalle de las ventas anteriores al {cleanedBefore} se limpió para ahorrar espacio. Para esos
+            meses usa los resúmenes guardados de abajo (los fiados, gastos y cierres de caja sí se conservan).
+          </p>
+          <MonthlyHistory />
+        </div>
+      )}
 
       {tooLong ? (
         <p className="p-8 text-center text-warning">El rango máximo de un reporte es de un año.</p>

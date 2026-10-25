@@ -201,6 +201,13 @@ export function describeEvent(entry: ActivityEntry, branchNames: Map<string, str
       return {
         title: `Cambió el medio de pago ${str(d, 'name')}${d.is_active === false ? ' (apagado)' : ''}`,
       }
+    case 'storage.backup':
+      return { title: 'Descargó un respaldo en Excel' }
+    case 'storage.cleanup':
+      return {
+        title: `Limpió los datos anteriores a ${str(d, 'before')}`,
+        detail: `${num(d, 'orders')} pedidos y ${num(d, 'audit_log')} registros de actividad borrados (con respaldo previo)`,
+      }
     case 'settings.notifications':
       return { title: 'Cambió los ajustes de notificaciones' }
     default:

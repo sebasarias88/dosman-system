@@ -1,6 +1,6 @@
 import type { Env } from './env'
 import { errorResponse, json } from './http'
-import { deleteMedia, serveMedia, uploadMedia } from './media'
+import { deleteMedia, mediaUsage, serveMedia, uploadMedia } from './media'
 import { deliverPending, discoverChats, notificationStatus, runDaily, sendTest } from './notifications'
 import { createStaff, updateStaff } from './staff'
 
@@ -29,6 +29,8 @@ export default {
         if (method === 'GET') return await serveMedia(request, env, key)
         if (method === 'DELETE') return await deleteMedia(request, env, key)
       }
+
+      if (pathname === '/api/storage/media' && method === 'GET') return await mediaUsage(request, env)
 
       if (pathname === '/api/staff' && method === 'POST') return await createStaff(request, env)
       if (pathname.startsWith('/api/staff/') && method === 'PATCH') {
