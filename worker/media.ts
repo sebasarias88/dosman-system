@@ -99,3 +99,30 @@ export async function serveMedia(request: Request, env: Env, key: string): Promi
   if (!FOLDERS[folder].publicRead) headers.set('cache-control', 'private, max-age=3600')
   return new Response(object.body, { headers })
 }
+
+/**
+ * GET /api/storage/media — how much the photos weigh (owner only, storage screen).
+ * R2 Free includes 10 GB; listing uses cheap "class A" operations (1M free per month).
+ */
+export async function mediaUsage(request: Request, env: Env): Promise<Response> {
+  const session = await getStaffSession(request, env)
+  if (!session) return errorResponse(401, 'Sesión no válida')
+  if (session.role !== 'owner') return errorResponse(403, 'Solo el dueño puede ver el espacio')
+
+  const usage: Record<Folder, { files: number; bytes: number }> = {
+    products: { files: 0, bytes: 0 },
+    receipts: { files: 0, bytes: 0 },
+  }
+  for (const folder of Object.keys(FOLDERS) as Folder[]) {
+    let cursor: string | undefined
+    do {
+      const page = await env.MEDIA.list({ prefix: `${folder}/`, cursor, limit: 1000 })
+      for (const object of page.objects) {
+        usage[folder].files++
+        usage[folder].bytes += object.size
+      }
+      cursor = page.truncated ? page.cursor : undefined
+    } while (cursor)
+  }
+  return json({ ...usage, limit_bytes: 10 * 1024 ** 3 })
+}
