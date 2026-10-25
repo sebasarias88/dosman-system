@@ -1,12 +1,13 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useMatches, useNavigate } from '@tanstack/react-router'
-import { LogOut, Menu, X } from 'lucide-react'
+import { CircleHelp, LogOut, Menu, X } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Logo } from '@/components/brand/logo'
 import { Button } from '@/components/ui/button'
 import { MODULE_GROUP_LABELS, modulesFor, type ModuleGroup } from '@/config/modules'
 import { setActiveBranchId } from '@/features/auth/active-branch'
 import { signOut } from '@/features/auth/auth-api'
+import { HelpChat } from '@/features/assistant/help-chat'
 import { useStaff } from '@/features/auth/use-staff'
 import { cn } from '@/lib/cn'
 import { ROLE_LABELS } from '@/types/app'
@@ -108,7 +109,7 @@ function UserCard() {
   )
 }
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({ onNavigate, onHelp }: { onNavigate?: () => void; onHelp: () => void }) {
   return (
     <div className="flex h-full flex-col gap-6 p-4">
       <Logo className="mx-2 mt-2 w-40 text-fg" />
@@ -116,13 +117,23 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <div className="-mx-1 flex-1 overflow-y-auto px-1">
         <Navigation onNavigate={onNavigate} />
       </div>
-      <UserCard />
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={onHelp}
+          className="flex h-11 items-center gap-3 rounded-xl px-3 text-[0.95rem] text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
+        >
+          <CircleHelp className="size-[1.15rem] shrink-0" aria-hidden />
+          Ayuda
+        </button>
+        <UserCard />
+      </div>
     </div>
   )
 }
 
 /** Icon-only rail used on full-screen work modules (POS, tables) to leave room for the content. */
-function CompactRail({ onOpenMenu }: { onOpenMenu: () => void }) {
+function CompactRail({ onOpenMenu, onHelp }: { onOpenMenu: () => void; onHelp: () => void }) {
   const { profile, activeBranch } = useStaff()
   const visible = modulesFor(profile.role, activeBranch)
 
@@ -147,22 +158,30 @@ function CompactRail({ onOpenMenu }: { onOpenMenu: () => void }) {
           </Link>
         ))}
       </nav>
+      <Button variant="ghost" size="icon" aria-label="Ayuda" title="Ayuda" onClick={onHelp}>
+        <CircleHelp className="size-5" aria-hidden />
+      </Button>
     </aside>
   )
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
+  const openHelp = () => {
+    setMenuOpen(false)
+    setHelpOpen(true)
+  }
   const compact = useMatches({ select: (matches) => matches.some((m) => m.staticData.compactShell) })
 
   return (
     <div className="flex h-full">
       {compact ? (
-        <CompactRail onOpenMenu={() => setMenuOpen(true)} />
+        <CompactRail onOpenMenu={() => setMenuOpen(true)} onHelp={openHelp} />
       ) : (
         /* PC and large tablets: fixed sidebar. */
         <aside className="hidden w-64 shrink-0 border-r border-line bg-surface lg:block">
-          <SidebarContent />
+          <SidebarContent onHelp={openHelp} />
         </aside>
       )}
 
@@ -173,7 +192,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Menu className="size-6" aria-hidden />
           </Button>
           <Logo className="w-28 text-fg" />
-          <span className="size-11" aria-hidden />
+          <Button variant="ghost" size="icon" aria-label="Ayuda" onClick={openHelp}>
+            <CircleHelp className="size-6" aria-hidden />
+          </Button>
         </header>
 
         <main className={cn('min-h-0 flex-1', compact ? 'overflow-hidden' : 'overflow-y-auto')}>
@@ -208,8 +229,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           <X className="size-6" aria-hidden />
         </Button>
-        <SidebarContent onNavigate={() => setMenuOpen(false)} />
+        <SidebarContent onNavigate={() => setMenuOpen(false)} onHelp={openHelp} />
       </aside>
+
+      {/* Mounted once: the conversation survives closing and reopening the panel. */}
+      <HelpChat open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
   )
 }

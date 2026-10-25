@@ -1,3 +1,4 @@
+import { assistant } from './assistant/handler'
 import type { Env } from './env'
 import { errorResponse, json } from './http'
 import { deleteMedia, mediaUsage, serveMedia, uploadMedia } from './media'
@@ -29,6 +30,8 @@ export default {
         if (method === 'GET') return await serveMedia(request, env, key)
         if (method === 'DELETE') return await deleteMedia(request, env, key)
       }
+
+      if (pathname === '/api/assistant' && method === 'POST') return await assistant(request, env)
 
       if (pathname === '/api/storage/media' && method === 'GET') return await mediaUsage(request, env)
 

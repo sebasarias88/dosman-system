@@ -94,6 +94,16 @@ dueño desde **Empleados**.
 Los avisos salen cada 5 minutos (alertas, cierres de caja, inventario bajo) y cada mañana a las
 5:30 llega el resumen del día anterior. Los gastos fijos del día también se registran a esa hora.
 
+### 4. Asistente de ayuda (incluido, gratis)
+
+El botón **Ayuda** abre un chat con IA (Cloudflare Workers AI) que explica cómo usar el sistema según
+el rol de quien pregunta. No hay que configurar nada: se activa solo al publicar en Cloudflare. El plan
+gratis trae 10.000 "neuronas" al día (unas cuantas centenas de preguntas) y cada persona tiene un
+límite de 40 preguntas diarias para que nadie gaste el cupo del negocio. Lo que sabe el asistente
+está en `worker/assistant/manual.ts`: si cambia una pantalla, hay que actualizar ese manual.
+
+En desarrollo local la IA no se conecta; con `ASSISTANT_FAKE=on` en `.dev.vars` responde un texto de prueba.
+
 ## PC de caja e impresora térmica (80 mm)
 
 1. Instalar el driver de la impresora (compatible ESC/POS de Epson), dejarla como **predeterminada**,
