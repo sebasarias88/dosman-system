@@ -34,7 +34,7 @@ export function RecurringTab() {
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center gap-4 rounded-card border border-line bg-surface p-5">
         <CalendarClock className="size-8 text-fg-subtle" aria-hidden />
-        <div className="min-w-0 flex-1">
+        <div className="min-w-[14rem] flex-1">
           <p className="text-sm text-fg-muted">Gastos fijos de cada mes</p>
           <p className="text-2xl font-semibold tabular-nums">{formatCurrency(monthly)}</p>
           <p className="text-sm text-fg-subtle">

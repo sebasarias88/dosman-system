@@ -6,13 +6,14 @@ por recetas; envíos entre sedes; gastos; reportes y control anti-pérdidas para
 
 ## Stack
 
-| Parte                              | Tecnología                                                        | Costo              |
-| ---------------------------------- | ----------------------------------------------------------------- | ------------------ |
-| App (PWA)                          | Vite + React 19 + TypeScript + Tailwind 4 + TanStack Router/Query | —                  |
-| Base de datos, login y tiempo real | Supabase (plan Free, región São Paulo)                            | Gratis             |
-| Hosting y API                      | Cloudflare Workers (archivos estáticos + `/api/*`)                | Gratis             |
-| Fotos (productos y recibos)        | Cloudflare R2, solo a través del Worker                           | Gratis hasta 10 GB |
-| Avisos al dueño                    | Bot de Telegram + Web Push                                        | Gratis             |
+| Parte                              | Tecnología                                                        | Costo                |
+| ---------------------------------- | ----------------------------------------------------------------- | -------------------- |
+| App (PWA)                          | Vite + React 19 + TypeScript + Tailwind 4 + TanStack Router/Query | —                    |
+| Base de datos, login y tiempo real | Supabase (plan Free, región São Paulo)                            | Gratis               |
+| Hosting y API                      | Cloudflare Workers (archivos estáticos + `/api/*`)                | Gratis               |
+| Fotos (productos y recibos)        | Cloudflare R2, solo a través del Worker                           | Gratis hasta 10 GB   |
+| Avisos al dueño                    | Bot de Telegram (cron del Worker)                                 | Gratis               |
+| Asistente de ayuda                 | Cloudflare Workers AI                                             | Gratis (cupo diario) |
 
 ## Estructura
 
@@ -26,7 +27,8 @@ src/
   features/auth/     Sesión, perfil del empleado y sede activa
   components/        UI base, marca y estructura (barra lateral, sin internet, actualización)
   styles/index.css   Colores y tipografía de la marca
-worker/              API en Cloudflare (subir y servir fotos desde R2)
+worker/              API en Cloudflare: fotos (R2), empleados, avisos, asistente y crons
+docs/                Guía de puesta en marcha (PUESTA-EN-MARCHA.md)
 supabase/migrations/ Esquema completo de la base de datos, en orden
 public/brand/        Logos oficiales en SVG (sacados del manual de marca)
 ```
@@ -43,6 +45,9 @@ yarn dev                          # app + Worker en http://localhost:5173
 Antes de cada commit: `yarn typecheck` y `yarn lint` deben quedar sin errores.
 
 ## Puesta en marcha (una sola vez)
+
+La guía completa, con la verificación final y la configuración del primer día, está en
+[`docs/PUESTA-EN-MARCHA.md`](docs/PUESTA-EN-MARCHA.md). Resumen:
 
 ### 1. Supabase
 

@@ -202,7 +202,8 @@ export interface Transfer {
 export const transfersQuery = (branchId: string) =>
   queryOptions({
     queryKey: inventoryKeys.transfers(branchId),
-    refetchInterval: 60_000,
+    // Incoming transfers arrive by Realtime; this only covers a dropped connection.
+    refetchInterval: 5 * 60_000,
     queryFn: async () =>
       unwrap<Transfer[]>(
         await supabase

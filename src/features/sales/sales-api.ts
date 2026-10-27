@@ -1,4 +1,5 @@
 import { queryOptions } from '@tanstack/react-query'
+import { pollWhenOffline } from '@/lib/realtime-status'
 import { supabase } from '@/lib/supabase'
 import type {
   CashMovement,
@@ -152,7 +153,7 @@ export const openSessionQuery = (branchId: string) =>
 export const sessionSummaryQuery = (sessionId: string) =>
   queryOptions({
     queryKey: salesKeys.summary(sessionId),
-    refetchInterval: 30_000,
+    refetchInterval: pollWhenOffline,
     queryFn: async () =>
       unwrap<CashSummary>(await supabase.rpc('cash_session_summary', { p_session_id: sessionId })),
   })
@@ -227,8 +228,8 @@ export async function closeCashSession(input: {
 export const openOrdersQuery = (branchId: string) =>
   queryOptions({
     queryKey: salesKeys.openOrders(branchId),
-    // Realtime refreshes this instantly; polling is only a safety net.
-    refetchInterval: 30_000,
+    // Realtime refreshes this instantly; polling only runs while it is disconnected.
+    refetchInterval: pollWhenOffline,
     queryFn: async () =>
       unwrap<Order[]>(
         await supabase
@@ -331,7 +332,7 @@ export async function moveOrderTable(orderId: string, tableId: string): Promise<
 export const kitchenQuery = (branchId: string) =>
   queryOptions({
     queryKey: salesKeys.kitchen(branchId),
-    refetchInterval: 30_000,
+    refetchInterval: pollWhenOffline,
     queryFn: async () =>
       unwrap<KitchenItem[]>(
         await supabase

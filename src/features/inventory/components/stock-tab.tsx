@@ -98,7 +98,7 @@ export function StockTab({ branchId, isManager }: { branchId: string; isManager:
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-card border border-line">
+      <div className="relative overflow-x-auto rounded-card border border-line">
         <table className="w-full min-w-[40rem] text-left text-sm">
           <thead className="bg-surface-2 text-xs text-fg-subtle">
             <tr>
