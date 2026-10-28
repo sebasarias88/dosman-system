@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/field'
-import { Spinner } from '@/components/ui/spinner'
+import { CardsSkeleton } from '@/components/ui/skeleton'
 import {
   findTelegramChats,
   notificationSettingsQuery,
@@ -51,7 +51,7 @@ export function NotificationsTab() {
     onError: showError,
   })
 
-  if (isPending || status.isPending) return <Spinner />
+  if (isPending || status.isPending) return <CardsSkeleton className="max-w-2xl" />
   if (!settings) return null
 
   function connect(chat: TelegramChat) {
@@ -68,6 +68,9 @@ export function NotificationsTab() {
   }
 
   const bot = status.data?.bot
+  // One mutation saves the chat and every switch: the spinner goes only on what was tapped.
+  const savingKeys = save.isPending ? Object.keys(save.variables) : []
+  const savingChat = savingKeys.includes('telegram_chat_id')
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
@@ -104,7 +107,7 @@ export function NotificationsTab() {
             </Button>
             <Button
               variant="ghost"
-              loading={save.isPending}
+              loading={savingChat}
               onClick={() =>
                 save.mutate(
                   { telegram_chat_id: null, telegram_chat_title: null },
@@ -158,7 +161,11 @@ export function NotificationsTab() {
                         · {chat.type === 'private' ? 'chat personal' : 'grupo'}
                       </span>
                     </span>
-                    <Button loading={save.isPending} onClick={() => connect(chat)}>
+                    <Button
+                      loading={savingChat && save.variables?.telegram_chat_id === chat.id}
+                      disabled={savingChat}
+                      onClick={() => connect(chat)}
+                    >
                       Usar este
                     </Button>
                   </li>
@@ -180,6 +187,8 @@ export function NotificationsTab() {
             label={toggle.label}
             description={toggle.description}
             checked={Boolean(settings[toggle.key])}
+            loading={savingKeys.includes(toggle.key)}
+            disabled={save.isPending && !savingKeys.includes(toggle.key)}
             onCheckedChange={(value) => save.mutate({ [toggle.key]: value })}
           />
         ))}

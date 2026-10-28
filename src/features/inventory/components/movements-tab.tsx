@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Badge, type BadgeTone } from '@/components/ui/badge'
-import { SelectInput } from '@/components/ui/field'
-import { Spinner } from '@/components/ui/spinner'
+import { Select } from '@/components/ui/select'
+import { ListSkeleton } from '@/components/ui/skeleton'
 import { formatStock } from '@/features/catalog/units'
 import { cn } from '@/lib/cn'
 import { formatDateTime } from '@/lib/format'
@@ -21,28 +21,26 @@ const TYPE_LABELS: Record<MovementType, { label: string; tone: BadgeTone }> = {
 /** History of every stock change in the branch: why each quantity moved. */
 export function MovementsTab({ branchId }: { branchId: string }) {
   const [supplyId, setSupplyId] = useState<string | null>(null)
-  const { data: supplies = [] } = useQuery(stockQuery(branchId))
+  const { data: supplies = [], isLoading: loadingSupplies } = useQuery(stockQuery(branchId))
   const { data: movements = [], isPending } = useQuery(movementsQuery(branchId, supplyId))
 
   return (
     <div className="flex flex-col gap-4">
       <div className="max-w-sm">
-        <SelectInput
+        <Select
           aria-label="Filtrar por insumo"
           value={supplyId ?? ''}
-          onChange={(e) => setSupplyId(e.target.value || null)}
-        >
-          <option value="">Todos los insumos</option>
-          {supplies.map((s) => (
-            <option key={s.supply_id} value={s.supply_id}>
-              {s.name}
-            </option>
-          ))}
-        </SelectInput>
+          onValueChange={(next) => setSupplyId(next || null)}
+          loading={loadingSupplies}
+          options={[
+            { value: '', label: 'Todos los insumos' },
+            ...supplies.map((s) => ({ value: s.supply_id, label: s.name })),
+          ]}
+        />
       </div>
 
       {isPending ? (
-        <Spinner />
+        <ListSkeleton />
       ) : movements.length === 0 ? (
         <p className="p-8 text-center text-fg-muted">No hay movimientos.</p>
       ) : (

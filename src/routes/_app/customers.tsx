@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { TextInput } from '@/components/ui/field'
-import { Spinner } from '@/components/ui/spinner'
+import { ListSkeleton, Skeleton } from '@/components/ui/skeleton'
 import { requireModule } from '@/features/auth/require-module'
 import { useStaff } from '@/features/auth/use-staff'
 import { CustomerSheet } from '@/features/customers/components/customer-sheet'
@@ -70,7 +70,7 @@ function CustomersScreen() {
     : null
 
   const filters: { id: Filter; label: string }[] = [
-    { id: 'debt', label: `Con deuda (${withDebt.length})` },
+    { id: 'debt', label: isPending ? 'Con deuda' : `Con deuda (${withDebt.length})` },
     { id: 'all', label: 'Todos' },
     ...(isManager ? [{ id: 'archived' as const, label: 'Archivados' }] : []),
   ]
@@ -97,12 +97,14 @@ function CustomersScreen() {
           <p
             className={cn('text-lg font-semibold tabular-nums sm:text-2xl', totalOwed > 0 && 'text-warning')}
           >
-            {formatCurrency(totalOwed)}
+            {isPending ? <Skeleton className="h-7 w-24" /> : formatCurrency(totalOwed)}
           </p>
         </div>
         <div className="rounded-card border border-line bg-surface p-3 sm:p-4">
           <p className="text-xs text-fg-muted sm:text-sm">Clientes con deuda</p>
-          <p className="text-lg font-semibold tabular-nums sm:text-2xl">{withDebt.length}</p>
+          <p className="text-lg font-semibold tabular-nums sm:text-2xl">
+            {isPending ? <Skeleton className="h-7 w-10" /> : withDebt.length}
+          </p>
         </div>
         <div className="rounded-card border border-line bg-surface p-3 sm:p-4">
           <p className="text-xs text-fg-muted sm:text-sm">Deben hace más de 30 días</p>
@@ -112,8 +114,8 @@ function CustomersScreen() {
               overdue.length > 0 && 'text-danger',
             )}
           >
-            {overdue.length}
-            {overdue.length > 0 && (
+            {isPending ? <Skeleton className="h-7 w-10" /> : overdue.length}
+            {!isPending && overdue.length > 0 && (
               <span className="ml-2 hidden text-base font-normal sm:inline">
                 {formatCurrency(overdue.reduce((sum, r) => sum + r.balance, 0))}
               </span>
@@ -155,7 +157,7 @@ function CustomersScreen() {
       </div>
 
       {isPending ? (
-        <Spinner />
+        <ListSkeleton />
       ) : visible.length === 0 ? (
         <p className="p-8 text-center text-fg-muted">
           {filter === 'debt' && !term ? 'Nadie debe nada. ¡Todo al día!' : 'No hay clientes que coincidan.'}

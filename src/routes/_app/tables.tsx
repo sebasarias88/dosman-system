@@ -4,8 +4,8 @@ import { ArrowRightLeft, Bell, CheckCheck, Pencil, Plus, Trees } from 'lucide-re
 import { useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { SelectInput } from '@/components/ui/field'
-import { Spinner } from '@/components/ui/spinner'
+import { Select } from '@/components/ui/select'
+import { TilesSkeleton } from '@/components/ui/skeleton'
 import { requireModule } from '@/features/auth/require-module'
 import { useStaff } from '@/features/auth/use-staff'
 import { OpenSessionCard } from '@/features/sales/components/open-session-card'
@@ -39,7 +39,7 @@ function TablesScreen() {
   })
 
   if (!activeBranch) return null
-  if (isPending) return <Spinner className="m-10" />
+  if (isPending) return <TilesSkeleton className="p-4" />
   if (!session) {
     return (
       <div className="h-full overflow-y-auto p-6 lg:p-10">
@@ -101,7 +101,7 @@ function TablesMap({ branch }: { branch: Branch }) {
 
   const free = tables.length - orderByTable.size
 
-  if (isPending) return <Spinner className="m-10" />
+  if (isPending) return <TilesSkeleton className="p-4" />
 
   return (
     <div className="h-full overflow-y-auto">
@@ -334,19 +334,16 @@ function TableActions({
       )}
       {order.order_type === 'table' && freeTables.length > 0 && (
         <div className="flex gap-2">
-          <SelectInput
+          <Select
             aria-label="Mover a la mesa"
+            placeholder="Mover a otra mesa…"
             value={target}
-            onChange={(e) => setTarget(e.target.value)}
-          >
-            <option value="">Mover a otra mesa…</option>
-            {freeTables.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-                {t.zones ? ` · ${t.zones.name}` : ''}
-              </option>
-            ))}
-          </SelectInput>
+            onValueChange={setTarget}
+            options={freeTables.map((t) => ({
+              value: t.id,
+              label: `${t.name}${t.zones ? ` · ${t.zones.name}` : ''}`,
+            }))}
+          />
           <Button
             variant="secondary"
             disabled={!target}

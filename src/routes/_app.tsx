@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { AppShell } from '@/components/layout/app-shell'
+import { AppBootSkeleton } from '@/components/ui/skeleton'
 import { staffContextQuery } from '@/features/auth/auth-api'
 import { BranchRealtime } from '@/features/sales/branch-realtime'
 
@@ -12,6 +13,8 @@ export const Route = createFileRoute('/_app')({
     }
     return { staff }
   },
+  // While the session is checked on the first load: the shell's shape, not a blank page.
+  pendingComponent: AppBootSkeleton,
   component: AppLayout,
 })
 

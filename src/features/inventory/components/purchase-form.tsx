@@ -3,7 +3,8 @@ import { Camera, PackageCheck, Plus, X } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Field, SelectInput, TextArea, TextInput } from '@/components/ui/field'
+import { Field, TextArea, TextInput } from '@/components/ui/field'
+import { Select } from '@/components/ui/select'
 import { catalogQuery } from '@/features/catalog/catalog-api'
 import { paymentMethodsQuery } from '@/features/sales/sales-api'
 import { cn } from '@/lib/cn'
@@ -27,9 +28,9 @@ const PAYMENT_KINDS: { id: PurchasePaymentKind; label: string; description: stri
 
 export function PurchaseForm({ branchId }: { branchId: string }) {
   const { data: catalog } = useQuery(catalogQuery)
-  const { data: suppliers = [] } = useQuery(suppliersQuery)
+  const { data: suppliers = [], isLoading: loadingSuppliers } = useQuery(suppliersQuery)
   const { data: branches = [] } = useQuery(branchesQuery)
-  const { data: methods = [] } = useQuery(paymentMethodsQuery)
+  const { data: methods = [], isLoading: loadingMethods } = useQuery(paymentMethodsQuery)
 
   const [supplierId, setSupplierId] = useState('')
   const [newSupplier, setNewSupplier] = useState<{ name: string; phone: string } | null>(null)
@@ -146,18 +147,16 @@ export function PurchaseForm({ branchId }: { branchId: string }) {
           </div>
         ) : (
           <div className="flex gap-2">
-            <SelectInput
+            <Select
               aria-label="Proveedor"
               value={supplierId}
-              onChange={(e) => setSupplierId(e.target.value)}
-            >
-              <option value="">Sin proveedor (compra suelta)</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </SelectInput>
+              onValueChange={setSupplierId}
+              loading={loadingSuppliers}
+              options={[
+                { value: '', label: 'Sin proveedor (compra suelta)' },
+                ...suppliers.map((s) => ({ value: s.id, label: s.name })),
+              ]}
+            />
             <Button variant="secondary" onClick={() => setNewSupplier({ name: '', phone: '' })}>
               <Plus className="size-4" aria-hidden />
               Nuevo
@@ -215,15 +214,15 @@ export function PurchaseForm({ branchId }: { branchId: string }) {
           <div className="max-w-xs">
             <Field label="Medio de pago">
               {(props) => (
-                <SelectInput {...props} value={methodCode} onChange={(e) => setMethodCode(e.target.value)}>
-                  {methods
+                <Select
+                  {...props}
+                  value={methodCode}
+                  onValueChange={setMethodCode}
+                  loading={loadingMethods}
+                  options={methods
                     .filter((m) => m.kind !== 'credit')
-                    .map((m) => (
-                      <option key={m.code} value={m.code}>
-                        {m.name}
-                      </option>
-                    ))}
-                </SelectInput>
+                    .map((m) => ({ value: m.code, label: m.name }))}
+                />
               )}
             </Field>
           </div>

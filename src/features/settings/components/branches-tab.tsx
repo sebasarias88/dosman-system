@@ -4,8 +4,9 @@ import { ArrowRight } from 'lucide-react'
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Field, SelectInput, Switch, TextInput } from '@/components/ui/field'
-import { Spinner } from '@/components/ui/spinner'
+import { Field, Switch, TextInput } from '@/components/ui/field'
+import { Select } from '@/components/ui/select'
+import { CardsSkeleton } from '@/components/ui/skeleton'
 import { branchSettingsQuery, updateBranch, type BranchSettings } from '../settings-api'
 import { useSettingsMutation } from '../use-settings-mutation'
 
@@ -14,7 +15,7 @@ const CUTOFFS = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', 
 
 export function BranchesTab() {
   const { data: branches = [], isPending } = useQuery(branchSettingsQuery)
-  if (isPending) return <Spinner />
+  if (isPending) return <CardsSkeleton />
   return (
     <div className="flex flex-col gap-4">
       {branches.map((branch) => (
@@ -61,13 +62,16 @@ function BranchCard({ branch }: { branch: BranchSettings }) {
           hint="Lo vendido de madrugada antes de esta hora cuenta para el día anterior."
         >
           {(props) => (
-            <SelectInput {...props} value={cutoff} onChange={(e) => setCutoff(e.target.value)}>
-              {CUTOFFS.map((c) => (
-                <option key={c} value={c}>
-                  {c === '00:00' ? '12:00 a. m. (medianoche)' : `${Number(c.slice(0, 2))}:00 a. m.`}
-                </option>
-              ))}
-            </SelectInput>
+            <Select
+              {...props}
+              value={cutoff}
+              onValueChange={setCutoff}
+              searchable={false}
+              options={CUTOFFS.map((c) => ({
+                value: c,
+                label: c === '00:00' ? '12:00 a. m. (medianoche)' : `${Number(c.slice(0, 2))}:00 a. m.`,
+              }))}
+            />
           )}
         </Field>
       </div>

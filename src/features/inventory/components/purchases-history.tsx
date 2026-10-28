@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Receipt } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Spinner } from '@/components/ui/spinner'
+import { ListSkeleton } from '@/components/ui/skeleton'
 import { formatStock } from '@/features/catalog/units'
 import { formatCurrency, formatDateTime } from '@/lib/format'
 import { toast } from 'sonner'
@@ -13,7 +13,7 @@ export function PurchasesHistory({ branchId }: { branchId: string }) {
   const { data: purchases = [], isPending } = useQuery(purchasesQuery(branchId))
   const [openId, setOpenId] = useState<string | null>(null)
 
-  if (isPending) return <Spinner />
+  if (isPending) return <ListSkeleton />
   if (purchases.length === 0)
     return <p className="p-8 text-center text-fg-muted">Aún no hay compras registradas.</p>
 

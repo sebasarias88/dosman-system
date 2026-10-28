@@ -5,7 +5,7 @@ import { useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { TextInput } from '@/components/ui/field'
-import { Spinner } from '@/components/ui/spinner'
+import { CardsSkeleton, ListSkeleton, StatsSkeleton } from '@/components/ui/skeleton'
 import { requireModule } from '@/features/auth/require-module'
 import { useStaff } from '@/features/auth/use-staff'
 import { BarList } from '@/features/reports/components/bar-list'
@@ -231,7 +231,10 @@ function ReportsScreen() {
       ) : overview.isError ? (
         <p className="p-8 text-center text-danger">No se pudo cargar el reporte. Intenta de nuevo.</p>
       ) : !data ? (
-        <Spinner />
+        <div className="flex flex-col gap-6">
+          <StatsSkeleton tiles={8} />
+          <CardsSkeleton cards={1} />
+        </div>
       ) : (
         <>
           <KpiGrid totals={data.totals} previous={data.previous} showShared={branchId !== null} />
@@ -260,7 +263,7 @@ function ReportsScreen() {
             title="Productos"
             description="Ordena por lo que más se vende o por lo que más ganancia deja."
           >
-            {products.data ? <ProductsTable rows={products.data} /> : <Spinner />}
+            {products.data ? <ProductsTable rows={products.data} /> : <ListSkeleton rows={6} />}
           </Panel>
 
           <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">

@@ -4,7 +4,7 @@ import { ArrowDownLeft, ArrowUpRight, CheckCircle2, Printer, TriangleAlert, Wall
 import { useState, type ReactNode } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Spinner } from '@/components/ui/spinner'
+import { CardsSkeleton } from '@/components/ui/skeleton'
 import { requireModule } from '@/features/auth/require-module'
 import { useStaff } from '@/features/auth/use-staff'
 import { recordExpense } from '@/features/expenses/expenses-api'
@@ -68,7 +68,7 @@ function BranchCash({ branchId, branchName }: { branchId: string; branchName: st
           onDone={() => setClosed(null)}
         />
       ) : isPending ? (
-        <Spinner className="mx-auto" />
+        <CardsSkeleton />
       ) : session ? (
         <OpenSession
           session={session}

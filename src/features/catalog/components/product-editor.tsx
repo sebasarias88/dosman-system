@@ -2,7 +2,8 @@ import { Archive, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { Field, MoneyInput, SelectInput, Switch, TextArea, TextInput } from '@/components/ui/field'
+import { Field, MoneyInput, Switch, TextArea, TextInput } from '@/components/ui/field'
+import { Select } from '@/components/ui/select'
 import { Sheet } from '@/components/ui/sheet'
 import { cn } from '@/lib/cn'
 import { formatCurrency } from '@/lib/format'
@@ -198,20 +199,12 @@ export function ProductEditor({ open, product, catalog, suppliesById, onClose }:
             </Field>
             <Field label="Categoría" error={errors.category}>
               {(props) => (
-                <SelectInput
+                <Select
                   {...props}
                   value={draft.category_id}
-                  onChange={(e) => patch({ category_id: e.target.value })}
-                >
-                  <option value="" disabled>
-                    Elegir…
-                  </option>
-                  {activeCategories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </SelectInput>
+                  onValueChange={(category_id) => patch({ category_id })}
+                  options={activeCategories.map((c) => ({ value: c.id, label: c.name }))}
+                />
               )}
             </Field>
           </div>

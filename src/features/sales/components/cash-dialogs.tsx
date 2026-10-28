@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
-import { Field, MoneyInput, SelectInput, TextInput } from '@/components/ui/field'
+import { Field, MoneyInput, TextInput } from '@/components/ui/field'
+import { Select } from '@/components/ui/select'
 import { ReceiptPicker } from '@/features/expenses/components/receipt-picker'
 import { expenseCategoriesQuery } from '@/features/expenses/expenses-api'
 
@@ -80,7 +81,10 @@ const NOT_EXPENSE = 'none'
  * up in the expenses and in the real profit.
  */
 export function CashMovementDialog({ open, kind, loading, onConfirm, onCancel }: MovementDialogProps) {
-  const { data: categories = [] } = useQuery({ ...expenseCategoriesQuery, enabled: kind === 'out' })
+  const { data: categories = [], isLoading: loadingCategories } = useQuery({
+    ...expenseCategoriesQuery,
+    enabled: kind === 'out',
+  })
   const [amount, setAmount] = useState<number | null>(null)
   const [reason, setReason] = useState('')
   const [category, setCategory] = useState('')
@@ -118,19 +122,19 @@ export function CashMovementDialog({ open, kind, loading, onConfirm, onCancel }:
         {kind === 'out' && (
           <Field label="¿En qué se gastó?">
             {(props) => (
-              <SelectInput {...props} value={category} onChange={(e) => setCategory(e.target.value)}>
-                <option value="" disabled>
-                  Elegir…
-                </option>
-                {categories
-                  .filter((c) => c.is_active)
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      Gasto · {c.name}
-                    </option>
-                  ))}
-                <option value={NOT_EXPENSE}>No es un gasto (retiro, cambio, otro)</option>
-              </SelectInput>
+              <Select
+                {...props}
+                value={category}
+                onValueChange={setCategory}
+                loading={loadingCategories}
+                searchable={false}
+                options={[
+                  ...categories
+                    .filter((c) => c.is_active)
+                    .map((c) => ({ value: c.id, label: `Gasto · ${c.name}` })),
+                  { value: NOT_EXPENSE, label: 'No es un gasto (retiro, cambio, otro)' },
+                ]}
+              />
             )}
           </Field>
         )}

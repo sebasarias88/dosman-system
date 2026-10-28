@@ -4,8 +4,10 @@ import { useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { SelectInput, TextInput } from '@/components/ui/field'
+import { TextInput } from '@/components/ui/field'
+import { Select } from '@/components/ui/select'
 import { Sheet } from '@/components/ui/sheet'
+import { ListSkeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
 import { toUserMessage } from '@/lib/errors'
 import { cn } from '@/lib/cn'
@@ -19,10 +21,11 @@ import type { DiningTable, Zone } from '../types'
 export function TablesEditor({ branchId, onClose }: { branchId: string; onClose: () => void }) {
   const queryClient = useQueryClient()
   const { data } = useQuery(seatingQuery(branchId))
-  const [busy, setBusy] = useState(false)
+  // Which action is saving ("add-zone", "table:<id>"…): only that button spins, the rest wait.
+  const [pending, setPending] = useState<string | null>(null)
 
-  async function run(action: () => Promise<void>, message?: string) {
-    setBusy(true)
+  async function run(key: string, action: () => Promise<void>, message?: string) {
+    setPending(key)
     try {
       await action()
       await queryClient.invalidateQueries({ queryKey: ['tables', branchId] })
@@ -32,7 +35,7 @@ export function TablesEditor({ branchId, onClose }: { branchId: string; onClose:
       toast.error(toUserMessage(error))
       return false
     } finally {
-      setBusy(false)
+      setPending(null)
     }
   }
 
@@ -44,28 +47,34 @@ export function TablesEditor({ branchId, onClose }: { branchId: string; onClose:
       description="Zonas del local y sus mesas, en el orden en que aparecen."
     >
       {!data ? (
-        <Spinner />
+        <ListSkeleton rows={5} />
       ) : (
         <div className="flex flex-col gap-8">
-          <ZonesSection branchId={branchId} zones={data.zones} busy={busy} run={run} />
-          <TablesSection branchId={branchId} zones={data.zones} tables={data.tables} busy={busy} run={run} />
+          <ZonesSection branchId={branchId} zones={data.zones} pending={pending} run={run} />
+          <TablesSection
+            branchId={branchId}
+            zones={data.zones}
+            tables={data.tables}
+            pending={pending}
+            run={run}
+          />
         </div>
       )}
     </Sheet>
   )
 }
 
-type Run = (action: () => Promise<void>, message?: string) => Promise<boolean>
+type Run = (key: string, action: () => Promise<void>, message?: string) => Promise<boolean>
 
 function ZonesSection({
   branchId,
   zones,
-  busy,
+  pending,
   run,
 }: {
   branchId: string
   zones: Zone[]
-  busy: boolean
+  pending: string | null
   run: Run
 }) {
   const [name, setName] = useState('')
@@ -75,6 +84,7 @@ function ZonesSection({
     const trimmed = name.trim()
     if (trimmed.length < 2) return
     const ok = await run(
+      'add-zone',
       () => saveZone({ branch_id: branchId, name: trimmed, sort_order: zones.length + 1, is_active: true }),
       'Zona creada',
     )
@@ -94,7 +104,11 @@ function ZonesSection({
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <Button type="submit" disabled={busy || name.trim().length < 2}>
+        <Button
+          type="submit"
+          loading={pending === 'add-zone'}
+          disabled={pending !== null || name.trim().length < 2}
+        >
           <Plus className="size-4" aria-hidden />
           Agregar
         </Button>
@@ -104,9 +118,11 @@ function ZonesSection({
           <li key={zone.id}>
             <button
               type="button"
-              disabled={busy}
+              disabled={pending !== null}
+              aria-busy={pending === `zone:${zone.id}` || undefined}
               onClick={() =>
                 void run(
+                  `zone:${zone.id}`,
                   () => saveZone({ ...zone, branch_id: branchId, is_active: !zone.is_active }),
                   zone.is_active ? 'Zona oculta' : 'Zona visible',
                 )
@@ -118,7 +134,9 @@ function ZonesSection({
               aria-label={`${zone.is_active ? 'Ocultar' : 'Mostrar'} la zona ${zone.name}`}
             >
               {zone.name}
-              {zone.is_active ? (
+              {pending === `zone:${zone.id}` ? (
+                <Spinner className="size-4" />
+              ) : zone.is_active ? (
                 <Eye className="size-4" aria-hidden />
               ) : (
                 <EyeOff className="size-4" aria-hidden />
@@ -135,13 +153,13 @@ function TablesSection({
   branchId,
   zones,
   tables,
-  busy,
+  pending,
   run,
 }: {
   branchId: string
   zones: Zone[]
   tables: DiningTable[]
-  busy: boolean
+  pending: string | null
   run: Run
 }) {
   const [zoneId, setZoneId] = useState(zones[0]?.id ?? '')
@@ -164,6 +182,7 @@ function TablesSection({
     // Continue after the last position so new tables appear at the end.
     const start = tables.reduce((max, t) => Math.max(max, t.sort_order), 0)
     await run(
+      'add-tables',
       async () => {
         for (const [index, tableName] of names.entries()) {
           await saveTable({
@@ -183,6 +202,7 @@ function TablesSection({
     event.preventDefault()
     if (!renaming || renaming.name.trim().length < 1) return
     const ok = await run(
+      `rename:${table.id}`,
       () =>
         saveTable({
           id: table.id,
@@ -203,21 +223,22 @@ function TablesSection({
         Mesas
       </h3>
       <form onSubmit={(e) => void addTables(e)} className="grid grid-cols-[1fr_5rem_auto] gap-2">
-        <SelectInput aria-label="Zona" value={zoneId} onChange={(e) => setZoneId(e.target.value)}>
-          <option value="">Sin zona</option>
-          {activeZones.map((z) => (
-            <option key={z.id} value={z.id}>
-              {z.name}
-            </option>
-          ))}
-        </SelectInput>
+        <Select
+          aria-label="Zona"
+          value={zoneId}
+          onValueChange={setZoneId}
+          options={[
+            { value: '', label: 'Sin zona' },
+            ...activeZones.map((z) => ({ value: z.id, label: z.name })),
+          ]}
+        />
         <TextInput
           aria-label="Cuántas mesas"
           inputMode="numeric"
           value={count}
           onChange={(e) => setCount(e.target.value.replace(/\D/g, '').slice(0, 2))}
         />
-        <Button type="submit" disabled={busy}>
+        <Button type="submit" loading={pending === 'add-tables'} disabled={pending !== null}>
           <Plus className="size-4" aria-hidden />
           Agregar
         </Button>
@@ -241,7 +262,13 @@ function TablesSection({
                   value={renaming.name}
                   onChange={(e) => setRenaming({ id: table.id, name: e.target.value })}
                 />
-                <Button type="submit" size="icon" aria-label="Guardar nombre" disabled={busy}>
+                <Button
+                  type="submit"
+                  size="icon"
+                  aria-label="Guardar nombre"
+                  loading={pending === `rename:${table.id}`}
+                  disabled={pending !== null}
+                >
                   <Check className="size-4" aria-hidden />
                 </Button>
               </form>
@@ -260,9 +287,11 @@ function TablesSection({
                 <Button
                   variant="ghost"
                   className="px-3 text-sm"
-                  disabled={busy}
+                  loading={pending === `table:${table.id}`}
+                  disabled={pending !== null}
                   onClick={() =>
                     void run(
+                      `table:${table.id}`,
                       () =>
                         saveTable({
                           id: table.id,

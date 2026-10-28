@@ -13,11 +13,13 @@ export function useSettingsMutation<TInput, TResult>(
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn,
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['settings'] })
+    // Settings are edited in place (switches, order arrows): waiting for the
+    // refresh keeps the control busy until it shows the saved value.
+    onSuccess: async () => {
       void queryClient.invalidateQueries({ queryKey: ['staff-context'] })
       void queryClient.invalidateQueries({ queryKey: ['payment-methods'] })
       void queryClient.invalidateQueries({ queryKey: ['branches'] })
+      await queryClient.invalidateQueries({ queryKey: ['settings'] })
       if (successMessage) toast.success(successMessage)
     },
     onError: (error) =>

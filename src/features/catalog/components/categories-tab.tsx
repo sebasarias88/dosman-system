@@ -12,6 +12,7 @@ export function CategoriesTab({ catalog }: { catalog: Catalog }) {
   const [newName, setNewName] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
+  const [moving, setMoving] = useState<string | null>(null)
 
   const create = useCatalogMutation(saveCategory, 'Categoría creada')
   const update = useCatalogMutation(saveCategory, 'Categoría actualizada')
@@ -39,7 +40,8 @@ export function CategoriesTab({ catalog }: { catalog: Catalog }) {
     if (current === undefined || other === undefined) return
     ids[index] = other
     ids[target] = current
-    reorder.mutate(ids)
+    setMoving(`${current}:${direction}`)
+    reorder.mutate(ids, { onSettled: () => setMoving(null) })
   }
 
   function saveName(category: Category) {
@@ -123,7 +125,8 @@ export function CategoriesTab({ catalog }: { catalog: Catalog }) {
                     variant="ghost"
                     size="icon"
                     aria-label={`Subir ${category.name}`}
-                    disabled={index === 0 || busy}
+                    disabled={index === 0 || (busy && moving !== `${category.id}:-1`)}
+                    loading={moving === `${category.id}:-1`}
                     onClick={() => move(index, -1)}
                   >
                     <ArrowUp className="size-4" aria-hidden />
@@ -132,7 +135,10 @@ export function CategoriesTab({ catalog }: { catalog: Catalog }) {
                     variant="ghost"
                     size="icon"
                     aria-label={`Bajar ${category.name}`}
-                    disabled={index === catalog.categories.length - 1 || busy}
+                    disabled={
+                      index === catalog.categories.length - 1 || (busy && moving !== `${category.id}:1`)
+                    }
+                    loading={moving === `${category.id}:1`}
                     onClick={() => move(index, 1)}
                   >
                     <ArrowDown className="size-4" aria-hidden />
@@ -152,6 +158,11 @@ export function CategoriesTab({ catalog }: { catalog: Catalog }) {
                     variant="ghost"
                     className="px-3 text-sm"
                     disabled={busy}
+                    loading={
+                      update.isPending &&
+                      update.variables.id === category.id &&
+                      update.variables.is_active !== category.is_active
+                    }
                     onClick={() => update.mutate({ ...category, is_active: !category.is_active })}
                   >
                     {category.is_active ? 'Ocultar' : 'Mostrar'}
@@ -166,6 +177,7 @@ export function CategoriesTab({ catalog }: { catalog: Catalog }) {
                     }
                     title={count > 0 ? 'Tiene productos: ocúltala en su lugar' : undefined}
                     disabled={count > 0 || busy}
+                    loading={remove.isPending && remove.variables === category.id}
                     onClick={() => remove.mutate(category.id)}
                   >
                     <Trash2 className="size-4" aria-hidden />

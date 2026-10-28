@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Field, MoneyInput, SelectInput, Switch, TextInput } from '@/components/ui/field'
+import { Field, MoneyInput, Switch, TextInput } from '@/components/ui/field'
+import { Select } from '@/components/ui/select'
 import { Sheet } from '@/components/ui/sheet'
 import { useStaff } from '@/features/auth/use-staff'
 import { suppliersQuery } from '@/features/inventory/inventory-api'
@@ -15,8 +16,8 @@ export const SHARED = 'shared'
 
 export function ExpenseSheet({ onClose }: { onClose: () => void }) {
   const { branches, activeBranch } = useStaff()
-  const { data: categories = [] } = useQuery(expenseCategoriesQuery)
-  const { data: suppliers = [] } = useQuery(suppliersQuery)
+  const { data: categories = [], isLoading: loadingCategories } = useQuery(expenseCategoriesQuery)
+  const { data: suppliers = [], isLoading: loadingSuppliers } = useQuery(suppliersQuery)
   const today = localToday()
 
   const [branch, setBranch] = useState<string>(activeBranch?.id ?? SHARED)
@@ -80,30 +81,26 @@ export function ExpenseSheet({ onClose }: { onClose: () => void }) {
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Sede">
             {(props) => (
-              <SelectInput {...props} value={branch} onChange={(e) => setBranch(e.target.value)}>
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-                <option value={SHARED}>Compartido (las dos sedes)</option>
-              </SelectInput>
+              <Select
+                {...props}
+                value={branch}
+                onValueChange={setBranch}
+                options={[
+                  ...branches.map((b) => ({ value: b.id, label: b.name })),
+                  { value: SHARED, label: 'Compartido (las dos sedes)' },
+                ]}
+              />
             )}
           </Field>
           <Field label="Categoría">
             {(props) => (
-              <SelectInput {...props} value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-                <option value="" disabled>
-                  Elegir…
-                </option>
-                {categories
-                  .filter((c) => c.is_active)
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-              </SelectInput>
+              <Select
+                {...props}
+                value={categoryId}
+                onValueChange={setCategoryId}
+                loading={loadingCategories}
+                options={categories.filter((c) => c.is_active).map((c) => ({ value: c.id, label: c.name }))}
+              />
             )}
           </Field>
         </div>
@@ -138,14 +135,16 @@ export function ExpenseSheet({ onClose }: { onClose: () => void }) {
         {suppliers.length > 0 && (
           <Field label="Proveedor (opcional)">
             {(props) => (
-              <SelectInput {...props} value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
-                <option value="">Ninguno</option>
-                {suppliers.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </SelectInput>
+              <Select
+                {...props}
+                value={supplierId}
+                onValueChange={setSupplierId}
+                loading={loadingSuppliers}
+                options={[
+                  { value: '', label: 'Ninguno' },
+                  ...suppliers.map((s) => ({ value: s.id, label: s.name })),
+                ]}
+              />
             )}
           </Field>
         )}

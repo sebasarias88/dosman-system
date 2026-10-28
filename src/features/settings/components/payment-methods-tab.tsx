@@ -4,7 +4,7 @@ import { useState, type FormEvent } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Switch, TextInput } from '@/components/ui/field'
-import { Spinner } from '@/components/ui/spinner'
+import { ListSkeleton } from '@/components/ui/skeleton'
 import { methodSettingsQuery, savePaymentMethod, type PaymentMethodSettings } from '../settings-api'
 import { useSettingsMutation } from '../use-settings-mutation'
 
@@ -18,6 +18,12 @@ export function PaymentMethodsTab() {
   const { data: methods = [], isPending } = useQuery(methodSettingsQuery)
   const [name, setName] = useState('')
   const save = useSettingsMutation(savePaymentMethod)
+  // Swapping two methods is two saves (each one audited), done one after the other.
+  const reorder = useSettingsMutation(
+    async (pair: { moved: string; changes: Parameters<typeof savePaymentMethod>[0][] }) => {
+      for (const change of pair.changes) await savePaymentMethod(change)
+    },
+  )
 
   function handleAdd(event: FormEvent) {
     event.preventDefault()
@@ -34,11 +40,16 @@ export function PaymentMethodsTab() {
     const a = methods[index]
     const b = methods[index + direction]
     if (!a || !b) return
-    save.mutate({ code: a.code, name: a.name, is_active: a.is_active, sort_order: b.sort_order })
-    save.mutate({ code: b.code, name: b.name, is_active: b.is_active, sort_order: a.sort_order })
+    reorder.mutate({
+      moved: `${a.code}:${direction}`,
+      changes: [
+        { code: a.code, name: a.name, is_active: a.is_active, sort_order: b.sort_order },
+        { code: b.code, name: b.name, is_active: b.is_active, sort_order: a.sort_order },
+      ],
+    })
   }
 
-  if (isPending) return <Spinner />
+  if (isPending) return <ListSkeleton rows={5} className="max-w-2xl" />
 
   return (
     <div className="flex max-w-2xl flex-col gap-5">
@@ -53,6 +64,7 @@ export function PaymentMethodsTab() {
             method={method}
             first={index === 0}
             last={index === methods.length - 1}
+            moving={reorder.isPending ? reorder.variables.moved : null}
             onMove={(direction) => move(index, direction)}
           />
         ))}
@@ -78,16 +90,21 @@ function MethodRow({
   method,
   first,
   last,
+  moving,
   onMove,
 }: {
   method: PaymentMethodSettings
   first: boolean
   last: boolean
+  /** "code:direction" of the arrow being saved, or null. */
+  moving: string | null
   onMove: (direction: -1 | 1) => void
 }) {
   const [name, setName] = useState(method.name)
   const save = useSettingsMutation(savePaymentMethod, 'Medio de pago guardado')
   const changed = name.trim() !== method.name && name.trim().length >= 2
+  const savingSwitch = save.isPending && save.variables.is_active !== method.is_active
+  const savingName = save.isPending && !savingSwitch
 
   return (
     <li className="flex flex-wrap items-center gap-3 p-3">
@@ -97,7 +114,8 @@ function MethodRow({
           size="icon"
           className="h-6"
           aria-label={`Subir ${method.name}`}
-          disabled={first}
+          disabled={first || (moving !== null && moving !== `${method.code}:-1`)}
+          loading={moving === `${method.code}:-1`}
           onClick={() => onMove(-1)}
         >
           <ArrowUp className="size-3.5" aria-hidden />
@@ -107,7 +125,8 @@ function MethodRow({
           size="icon"
           className="h-6"
           aria-label={`Bajar ${method.name}`}
-          disabled={last}
+          disabled={last || (moving !== null && moving !== `${method.code}:1`)}
+          loading={moving === `${method.code}:1`}
           onClick={() => onMove(1)}
         >
           <ArrowDown className="size-3.5" aria-hidden />
@@ -125,7 +144,8 @@ function MethodRow({
       {changed && (
         <Button
           variant="secondary"
-          loading={save.isPending}
+          loading={savingName}
+          disabled={savingSwitch}
           onClick={() =>
             save.mutate({
               code: method.code,
@@ -144,6 +164,8 @@ function MethodRow({
         <Switch
           label={method.is_active ? 'Activo' : 'Apagado'}
           checked={method.is_active}
+          loading={savingSwitch}
+          disabled={savingName}
           onCheckedChange={(is_active) =>
             save.mutate({ code: method.code, name: method.name, is_active, sort_order: method.sort_order })
           }

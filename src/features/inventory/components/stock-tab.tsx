@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Field, QuantityInput, TextInput } from '@/components/ui/field'
 import { Sheet } from '@/components/ui/sheet'
-import { Spinner } from '@/components/ui/spinner'
+import { ListSkeleton } from '@/components/ui/skeleton'
 import { formatStock, UNITS } from '@/features/catalog/units'
 import { cn } from '@/lib/cn'
 import { formatCurrency } from '@/lib/format'
@@ -42,7 +42,7 @@ export function StockTab({ branchId, isManager }: { branchId: string; isManager:
     [rows],
   )
 
-  if (isPending) return <Spinner />
+  if (isPending) return <ListSkeleton rows={8} />
 
   const term = search.trim().toLowerCase()
   const visible = rows

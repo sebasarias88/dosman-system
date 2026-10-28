@@ -1,7 +1,8 @@
 import { Minus, Plus, Trash2, X } from 'lucide-react'
 import type { Dispatch } from 'react'
 import { Button } from '@/components/ui/button'
-import { Field, MoneyInput, SelectInput, TextInput } from '@/components/ui/field'
+import { Field, MoneyInput, TextInput } from '@/components/ui/field'
+import { Select } from '@/components/ui/select'
 import type { Branch } from '@/types/app'
 import { cn } from '@/lib/cn'
 import { formatCurrency } from '@/lib/format'
@@ -140,22 +141,18 @@ export function OrderPanel({
             {draft.type === 'table' && (
               <Field label="Mesa">
                 {(props) => (
-                  <SelectInput
+                  <Select
                     {...props}
+                    placeholder="Elegir mesa…"
                     value={draft.tableId}
-                    onChange={(e) => patch({ tableId: e.target.value })}
-                  >
-                    <option value="" disabled>
-                      Elegir mesa…
-                    </option>
-                    {tables.map((t) => (
-                      <option key={t.id} value={t.id} disabled={occupiedTableIds.has(t.id)}>
-                        {t.name}
-                        {t.zones ? ` · ${t.zones.name}` : ''}
-                        {occupiedTableIds.has(t.id) ? ' (ocupada)' : ''}
-                      </option>
-                    ))}
-                  </SelectInput>
+                    onValueChange={(tableId) => patch({ tableId })}
+                    options={tables.map((t) => ({
+                      value: t.id,
+                      label: `${t.name}${t.zones ? ` · ${t.zones.name}` : ''}`,
+                      hint: occupiedTableIds.has(t.id) ? 'Ocupada' : undefined,
+                      disabled: occupiedTableIds.has(t.id),
+                    }))}
+                  />
                 )}
               </Field>
             )}

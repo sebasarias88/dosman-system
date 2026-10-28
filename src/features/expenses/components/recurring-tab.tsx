@@ -4,9 +4,10 @@ import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { Field, MoneyInput, SelectInput, Switch, TextInput } from '@/components/ui/field'
+import { Field, MoneyInput, Switch, TextInput } from '@/components/ui/field'
+import { Select } from '@/components/ui/select'
 import { Sheet } from '@/components/ui/sheet'
-import { Spinner } from '@/components/ui/spinner'
+import { CardsSkeleton, ListSkeleton } from '@/components/ui/skeleton'
 import { useStaff } from '@/features/auth/use-staff'
 import { cn } from '@/lib/cn'
 import { formatCurrency } from '@/lib/format'
@@ -27,7 +28,13 @@ export function RecurringTab() {
   const { data: items = [], isPending } = useQuery(recurringQuery)
   const [editing, setEditing] = useState<Editing>(null)
 
-  if (isPending) return <Spinner />
+  if (isPending)
+    return (
+      <div className="flex flex-col gap-5">
+        <CardsSkeleton cards={1} />
+        <ListSkeleton rows={3} />
+      </div>
+    )
   const monthly = items.filter((i) => i.is_active).reduce((sum, i) => sum + i.amount, 0)
 
   return (
@@ -100,7 +107,7 @@ export function RecurringTab() {
 
 function RecurringSheet({ item, onClose }: { item: RecurringExpense | null; onClose: () => void }) {
   const { branches } = useStaff()
-  const { data: categories = [] } = useQuery(expenseCategoriesQuery)
+  const { data: categories = [], isLoading: loadingCategories } = useQuery(expenseCategoriesQuery)
   const [branch, setBranch] = useState(item ? (item.branch_id ?? SHARED) : (branches[0]?.id ?? SHARED))
   const [categoryId, setCategoryId] = useState(item?.category_id ?? '')
   const [name, setName] = useState(item?.name ?? '')
@@ -169,30 +176,28 @@ function RecurringSheet({ item, onClose }: { item: RecurringExpense | null; onCl
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Sede">
             {(props) => (
-              <SelectInput {...props} value={branch} onChange={(e) => setBranch(e.target.value)}>
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-                <option value={SHARED}>Compartido (las dos sedes)</option>
-              </SelectInput>
+              <Select
+                {...props}
+                value={branch}
+                onValueChange={setBranch}
+                options={[
+                  ...branches.map((b) => ({ value: b.id, label: b.name })),
+                  { value: SHARED, label: 'Compartido (las dos sedes)' },
+                ]}
+              />
             )}
           </Field>
           <Field label="Categoría">
             {(props) => (
-              <SelectInput {...props} value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-                <option value="" disabled>
-                  Elegir…
-                </option>
-                {categories
+              <Select
+                {...props}
+                value={categoryId}
+                onValueChange={setCategoryId}
+                loading={loadingCategories}
+                options={categories
                   .filter((c) => c.is_active || c.id === categoryId)
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-              </SelectInput>
+                  .map((c) => ({ value: c.id, label: c.name }))}
+              />
             )}
           </Field>
           <Field label="Valor mensual">
@@ -200,13 +205,16 @@ function RecurringSheet({ item, onClose }: { item: RecurringExpense | null; onCl
           </Field>
           <Field label="Día del mes" hint="Del 1 al 28, para que exista en todos los meses">
             {(props) => (
-              <SelectInput {...props} value={day} onChange={(e) => setDay(Number(e.target.value))}>
-                {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </SelectInput>
+              <Select
+                {...props}
+                value={String(day)}
+                onValueChange={(next) => setDay(Number(next))}
+                searchable={false}
+                options={Array.from({ length: 28 }, (_, i) => ({
+                  value: String(i + 1),
+                  label: String(i + 1),
+                }))}
+              />
             )}
           </Field>
         </div>

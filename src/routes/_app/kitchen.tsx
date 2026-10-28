@@ -1,10 +1,10 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { BellRing, Check, ChefHat, Flame, Trees, Volume2, VolumeX } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Spinner } from '@/components/ui/spinner'
+import { ColumnsSkeleton } from '@/components/ui/skeleton'
 import { requireModule } from '@/features/auth/require-module'
 import { useStaff } from '@/features/auth/use-staff'
 import { useNow } from '@/features/sales/pos/open-orders'
@@ -99,9 +99,30 @@ function KitchenScreen() {
   const [mobileColumn, setMobileColumn] = useState<Column>('pending')
   const [soundOn, setSoundOn] = useState(readSoundPreference)
   const [audio, setAudio] = useState<AudioContext | null>(null)
+  const queryClient = useQueryClient()
   const advance = useSalesMutation(({ ids, next }: { ids: string[]; next: PrepStatus }) =>
     setPrepStatus(ids, next),
   )
+  // Tickets being moved ("orderId:status"). The spinner stays until the ticket
+  // really shows up in its next column, so nobody taps twice.
+  const [advancing, setAdvancing] = useState<ReadonlySet<string>>(new Set())
+
+  async function advanceTicket(ticket: Ticket, column: (typeof COLUMNS)[number]) {
+    const key = `${ticket.orderId}:${column.status}`
+    setAdvancing((current) => new Set(current).add(key))
+    try {
+      await advance.mutateAsync({ ids: ticket.items.map((i) => i.id), next: column.next })
+      await queryClient.invalidateQueries({ queryKey: kitchenQuery(activeBranch?.id ?? '').queryKey })
+    } catch {
+      // The error toast is shown by useSalesMutation.
+    } finally {
+      setAdvancing((current) => {
+        const next = new Set(current)
+        next.delete(key)
+        return next
+      })
+    }
+  }
 
   const tickets = useMemo(
     () =>
@@ -133,7 +154,7 @@ function KitchenScreen() {
   }
 
   if (!activeBranch) return null
-  if (isPending) return <Spinner className="m-10" />
+  if (isPending) return <ColumnsSkeleton className="p-3" />
 
   const soundActive = soundOn && audio !== null
 
@@ -198,8 +219,8 @@ function KitchenScreen() {
                 status={column.status}
                 actionLabel={column.action}
                 now={now}
-                busy={advance.isPending}
-                onAdvance={() => advance.mutate({ ids: ticket.items.map((i) => i.id), next: column.next })}
+                busy={advancing.has(`${ticket.orderId}:${column.status}`)}
+                onAdvance={() => void advanceTicket(ticket, column)}
               />
             ))}
           </section>
@@ -277,7 +298,7 @@ function TicketCard({
         size="lg"
         variant={status === 'ready' ? 'secondary' : 'primary'}
         onClick={onAdvance}
-        disabled={busy}
+        loading={busy}
       >
         {status === 'ready' ? (
           <BellRing className="size-5" aria-hidden />

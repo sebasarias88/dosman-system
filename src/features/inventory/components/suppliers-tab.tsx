@@ -2,9 +2,10 @@ import { useQuery } from '@tanstack/react-query'
 import { HandCoins } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Field, MoneyInput, SelectInput, Switch, TextInput } from '@/components/ui/field'
+import { Field, MoneyInput, Switch, TextInput } from '@/components/ui/field'
+import { Select } from '@/components/ui/select'
 import { Sheet } from '@/components/ui/sheet'
-import { Spinner } from '@/components/ui/spinner'
+import { ListSkeleton } from '@/components/ui/skeleton'
 import { paymentMethodsQuery } from '@/features/sales/sales-api'
 import { cn } from '@/lib/cn'
 import { formatCurrency } from '@/lib/format'
@@ -16,7 +17,7 @@ export function SuppliersTab() {
   const { data: balances = [], isPending } = useQuery(supplierBalancesQuery)
   const [paying, setPaying] = useState<SupplierBalance | null>(null)
 
-  if (isPending) return <Spinner />
+  if (isPending) return <ListSkeleton rows={4} />
   const owed = balances.reduce((sum, b) => sum + Math.max(b.balance, 0), 0)
 
   return (
@@ -63,7 +64,7 @@ export function SuppliersTab() {
 }
 
 function PaySheet({ supplier, onClose }: { supplier: SupplierBalance; onClose: () => void }) {
-  const { data: methods = [] } = useQuery(paymentMethodsQuery)
+  const { data: methods = [], isLoading: loadingMethods } = useQuery(paymentMethodsQuery)
   const [amount, setAmount] = useState<number | null>(supplier.balance)
   const [fromDrawer, setFromDrawer] = useState(false)
   const [methodCode, setMethodCode] = useState('nequi')
@@ -115,15 +116,15 @@ function PaySheet({ supplier, onClose }: { supplier: SupplierBalance; onClose: (
         {!fromDrawer && (
           <Field label="Medio de pago">
             {(props) => (
-              <SelectInput {...props} value={methodCode} onChange={(e) => setMethodCode(e.target.value)}>
-                {methods
+              <Select
+                {...props}
+                value={methodCode}
+                onValueChange={setMethodCode}
+                loading={loadingMethods}
+                options={methods
                   .filter((m) => m.kind !== 'credit')
-                  .map((m) => (
-                    <option key={m.code} value={m.code}>
-                      {m.name}
-                    </option>
-                  ))}
-              </SelectInput>
+                  .map((m) => ({ value: m.code, label: m.name }))}
+              />
             )}
           </Field>
         )}

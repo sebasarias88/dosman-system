@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { QuantityInput, TextArea, TextInput } from '@/components/ui/field'
-import { Spinner } from '@/components/ui/spinner'
+import { ListSkeleton } from '@/components/ui/skeleton'
 import { formatStock, UNITS } from '@/features/catalog/units'
 import { cn } from '@/lib/cn'
 import { formatCurrency } from '@/lib/format'
@@ -68,7 +68,7 @@ export function CountTab({ branchId }: { branchId: string }) {
     })
   }
 
-  if (isPending) return <Spinner />
+  if (isPending) return <ListSkeleton rows={8} />
 
   if (result) return <CountResult items={result} onDone={() => setResult(null)} />
 

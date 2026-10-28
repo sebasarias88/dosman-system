@@ -2,7 +2,8 @@ import { Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { Field, MoneyInput, QuantityInput, SelectInput, Switch, TextInput } from '@/components/ui/field'
+import { Field, MoneyInput, QuantityInput, Switch, TextInput } from '@/components/ui/field'
+import { Select } from '@/components/ui/select'
 import { Sheet } from '@/components/ui/sheet'
 import { formatUnitCost } from '@/lib/format'
 import { removeCatalogItem, saveSupply } from '../catalog-api'
@@ -111,18 +112,13 @@ export function SupplyEditor({ open, supply, usedInRecipes, onClose }: SupplyEdi
           }
         >
           {(props) => (
-            <SelectInput
+            <Select
               {...props}
               value={unit}
               disabled={Boolean(supply)}
-              onChange={(e) => setUnit(e.target.value as SupplyUnit)}
-            >
-              {SUPPLY_UNITS.map((u) => (
-                <option key={u} value={u}>
-                  {UNITS[u].kind}
-                </option>
-              ))}
-            </SelectInput>
+              onValueChange={(next) => setUnit(next as SupplyUnit)}
+              options={SUPPLY_UNITS.map((u) => ({ value: u, label: UNITS[u].kind }))}
+            />
           )}
         </Field>
         <div className="grid gap-4 sm:grid-cols-2">

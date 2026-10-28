@@ -1,11 +1,4 @@
-import {
-  useId,
-  useState,
-  type InputHTMLAttributes,
-  type ReactNode,
-  type SelectHTMLAttributes,
-  type TextareaHTMLAttributes,
-} from 'react'
+import { useId, useState, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react'
 import { cn } from '@/lib/cn'
 
 const CONTROL =
@@ -45,14 +38,6 @@ export function TextInput({ className, ...props }: InputHTMLAttributes<HTMLInput
 
 export function TextArea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return <textarea className={cn(CONTROL, 'min-h-20 resize-y py-2.5', className)} {...props} />
-}
-
-export function SelectInput({ className, children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select className={cn(CONTROL, 'h-11 pr-8', className)} {...props}>
-      {children}
-    </select>
-  )
 }
 
 const pesoFormatter = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 })
@@ -135,11 +120,21 @@ interface SwitchProps {
   onCheckedChange: (checked: boolean) => void
   label: string
   description?: string
+  /** The change is being saved: shows a spinner in the knob and blocks new taps. */
+  loading?: boolean
+  disabled?: boolean
 }
 
-export function Switch({ checked, onCheckedChange, label, description }: SwitchProps) {
+export function Switch({ checked, onCheckedChange, label, description, loading, disabled }: SwitchProps) {
+  const blocked = Boolean(loading || disabled)
   return (
-    <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl bg-surface-2 px-4 py-3">
+    <label
+      className={cn(
+        'flex items-center justify-between gap-4 rounded-xl bg-surface-2 px-4 py-3',
+        blocked ? 'cursor-default' : 'cursor-pointer',
+        disabled && !loading && 'opacity-50',
+      )}
+    >
       <span>
         <span className="block text-[0.95rem]">{label}</span>
         {description && <span className="block text-xs text-fg-subtle">{description}</span>}
@@ -148,6 +143,8 @@ export function Switch({ checked, onCheckedChange, label, description }: SwitchP
         type="checkbox"
         role="switch"
         checked={checked}
+        disabled={blocked}
+        aria-busy={loading || undefined}
         onChange={(e) => onCheckedChange(e.target.checked)}
         className="peer sr-only"
       />
@@ -160,10 +157,14 @@ export function Switch({ checked, onCheckedChange, label, description }: SwitchP
       >
         <span
           className={cn(
-            'absolute top-1 left-1 size-5 rounded-full bg-fg transition-transform',
+            'absolute top-1 left-1 grid size-5 place-items-center rounded-full bg-fg transition-transform',
             checked && 'translate-x-5',
           )}
-        />
+        >
+          {loading && (
+            <span className="size-3 animate-spin rounded-full border-2 border-ink border-t-transparent" />
+          )}
+        </span>
       </span>
     </label>
   )
