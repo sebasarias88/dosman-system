@@ -30,7 +30,7 @@
     // Public values (safe in the browser too). Secrets go through `wrangler secret put`:
     //   SUPABASE_SECRET_KEY  (staff accounts and notifications)
     //   TELEGRAM_BOT_TOKEN   (bot created with @BotFather)
-    "SUPABASE_URL": "https://YOUR-PROJECT-REF.supabase.co",
-    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_REPLACE_ME",
+    "SUPABASE_URL": "https://vrstvaekufrofwjnkfrf.supabase.co",
+    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_6aErS-P_v0A7GoHaBnbHJw_d4Pe9jmu",
   },
 }
