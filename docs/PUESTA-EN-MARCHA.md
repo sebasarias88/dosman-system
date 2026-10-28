@@ -17,8 +17,14 @@ solo se crean los servicios, se pegan las claves y se publica. Tiempo estimado: 
 ## 1. Supabase (base de datos, login y tiempo real)
 
 1. Entrar a <https://supabase.com> con el Gmail del negocio → **New project**.
-   - Nombre: `dosman-system` · Región: **South America (São Paulo)** · Contraseña de la base de
-     datos: generarla y guardarla en un gestor de contraseñas.
+   - Nombre: `dosman-system` · Contraseña de la base de datos: generarla y guardarla en un gestor
+     de contraseñas.
+   - Región: abrir **Advanced configuration** → **Specific region** → **East US (North Virginia)**
+     (`us-east-1`). Es la de menor latencia desde Colombia. La opción general "Americas" deja que
+     Supabase elija y puede caer en Oregón (`us-west-2`), más lejos.
+   - Dejar marcado **Automatically expose new tables**: las migraciones cuentan con eso para que
+     la app pueda leer las tablas (el acceso real lo controlan las políticas RLS).
+   - Dejar **sin marcar** "Enable automatic RLS": las migraciones ya activan RLS en cada tabla.
 2. **Authentication → Sign In / Providers → Email**: desactivar **Confirm email**.
 3. **Authentication → Settings**: desactivar **Allow new users to sign up** (solo el dueño crea
    usuarios desde la app).

@@ -9,7 +9,7 @@ por recetas; envíos entre sedes; gastos; reportes y control anti-pérdidas para
 | Parte                              | Tecnología                                                        | Costo                |
 | ---------------------------------- | ----------------------------------------------------------------- | -------------------- |
 | App (PWA)                          | Vite + React 19 + TypeScript + Tailwind 4 + TanStack Router/Query | —                    |
-| Base de datos, login y tiempo real | Supabase (plan Free, región São Paulo)                            | Gratis               |
+| Base de datos, login y tiempo real | Supabase (plan Free, región us-east-1)                            | Gratis               |
 | Hosting y API                      | Cloudflare Workers (archivos estáticos + `/api/*`)                | Gratis               |
 | Fotos (productos y recibos)        | Cloudflare R2, solo a través del Worker                           | Gratis hasta 10 GB   |
 | Avisos al dueño                    | Bot de Telegram (cron del Worker)                                 | Gratis               |
@@ -51,7 +51,8 @@ La guía completa, con la verificación final y la configuración del primer dí
 
 ### 1. Supabase
 
-1. Crear el proyecto `dosman-system` en la región **South America (São Paulo)**.
+1. Crear el proyecto `dosman-system` en la región **East US (North Virginia) · `us-east-1`** (en
+   _Advanced configuration_ elegir la región específica, no la general "Americas").
 2. **Authentication → Sign In / Providers → Email**: desactivar _Confirm email_.
 3. **Authentication → Settings**: desactivar _Allow new users to sign up_ (solo el dueño crea usuarios).
 4. Aplicar las migraciones de `supabase/migrations/` en orden (CLI: `npx supabase link` y luego
