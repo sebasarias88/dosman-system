@@ -65,20 +65,37 @@ solo se crean los servicios, se pegan las claves y se publica. Tiempo estimado: 
 
 ## 2. Cloudflare (hosting, API, fotos y asistente)
 
-1. Crear la cuenta en <https://dash.cloudflare.com> con el Gmail del negocio (plan Free).
-2. En tu Mac:
+1. Crear la cuenta en <https://dash.cloudflare.com> con el Gmail del negocio (plan Free) y
+   confirmar el correo de verificación.
+2. **R2 Object Storage** → activar el plan gratis (pide la tarjeta del cliente; no cobra hasta 10 GB).
+3. En tu Mac, con la cuenta de Dosman abierta en el navegador:
 
    ```bash
-   npx wrangler login
+   npx wrangler whoami        # si muestra la cuenta de otro cliente: npx wrangler logout
+   npx wrangler login         # Allow en el navegador; whoami debe decir dosman.sistema@gmail.com
    npx wrangler r2 bucket create dosman-media
-   npx wrangler secret put SUPABASE_SECRET_KEY     # pegar el sb_secret_… del paso 1.7
    yarn deploy
    ```
 
-3. El sistema queda en `https://dosman-system.<cuenta>.workers.dev`. Abrirlo y entrar con el
+   - `r2 bucket create` pregunta si agrega la conexión al archivo de configuración: responder
+     **n** (`wrangler.jsonc` ya la tiene como `MEDIA`).
+   - El primer deploy pide registrar un subdominio de workers.dev: **Y** → `dosman` → **Y**.
+
+4. Después del deploy, la clave secreta de Supabase (**Secret keys** → `sb_secret_…`):
+
+   ```bash
+   npx wrangler secret put SUPABASE_SECRET_KEY
+   ```
+
+   Escribir el comando tal cual, presionar Enter y pegar la clave **solo** cuando pregunte
+   `Enter a secret value`. Debe responder `Uploaded secret SUPABASE_SECRET_KEY` (si muestra la clave
+   como nombre, se pegó en el lugar equivocado: borrar ese secreto en **Settings → Variables and
+   Secrets** y cambiar la clave en Supabase). Se aplica al instante, sin volver a publicar.
+
+5. El sistema queda en `https://dosman-system.dosman.workers.dev`. Abrirlo y entrar con el
    dueño del paso 1.5.
-4. El asistente **Ayuda** (Workers AI) no necesita nada más: funciona apenas se publica.
-5. Los crons (avisos cada 5 minutos y tarea diaria de las 5:30 a. m.) se activan solos con el deploy.
+6. El asistente **Ayuda** (Workers AI) no necesita nada más: funciona apenas se publica.
+7. Los crons (avisos cada 5 minutos y tarea diaria de las 5:30 a. m.) se activan solos con el deploy.
    Se ven en **Workers → dosman-system → Settings → Triggers**.
 
 ## 3. Telegram (avisos al dueño, opcional)

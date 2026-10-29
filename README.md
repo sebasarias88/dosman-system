@@ -79,14 +79,15 @@ La guía completa, con la verificación final y la configuración del primer dí
 
 ```bash
 npx wrangler login
-npx wrangler r2 bucket create dosman-media
+npx wrangler r2 bucket create dosman-media   # responder "n" a agregar la conexión: ya existe
+yarn deploy                                  # el primero pide el subdominio: dosman
 # Clave secreta de Supabase (Project Settings → API Keys → Secret keys → sb_secret_...).
 # Solo la usa el servidor para crear empleados y enviar avisos; nunca llega al navegador.
+# Pegarla cuando pregunte "Enter a secret value", no en la línea del comando.
 npx wrangler secret put SUPABASE_SECRET_KEY
-yarn deploy
 ```
 
-El sistema queda en `https://dosman-system.<cuenta>.workers.dev`. Los demás empleados los crea el
+El sistema queda en `https://dosman-system.dosman.workers.dev`. Los demás empleados los crea el
 dueño desde **Empleados**.
 
 ### 3. Avisos por Telegram (opcional, gratis)
