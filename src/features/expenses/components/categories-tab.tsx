@@ -3,7 +3,7 @@ import { Plus } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Switch, TextInput } from '@/components/ui/field'
-import { Spinner } from '@/components/ui/spinner'
+import { ListSkeleton } from '@/components/ui/skeleton'
 import { expenseCategoriesQuery, saveExpenseCategory, type ExpenseCategory } from '../expenses-api'
 import { useExpenseMutation } from '../use-expense-mutation'
 
@@ -19,7 +19,7 @@ export function CategoriesTab() {
     save.mutate({ name, is_active: true }, { onSuccess: () => setName('') })
   }
 
-  if (isPending) return <Spinner />
+  if (isPending) return <ListSkeleton rows={5} className="max-w-xl" />
 
   return (
     <div className="flex max-w-xl flex-col gap-5">
@@ -49,6 +49,9 @@ function CategoryRow({ category }: { category: ExpenseCategory }) {
   const [name, setName] = useState(category.name)
   const save = useExpenseMutation(saveExpenseCategory)
   const changed = name.trim() !== category.name && name.trim().length >= 2
+  // One mutation serves the name and the switch: show the spinner only on what was tapped.
+  const savingSwitch = save.isPending && save.variables.is_active !== category.is_active
+  const savingName = save.isPending && !savingSwitch
 
   return (
     <li className="flex flex-wrap items-center gap-3 p-3">
@@ -62,7 +65,8 @@ function CategoryRow({ category }: { category: ExpenseCategory }) {
       {changed && (
         <Button
           variant="secondary"
-          loading={save.isPending}
+          loading={savingName}
+          disabled={savingSwitch}
           onClick={() => save.mutate({ id: category.id, name, is_active: category.is_active })}
         >
           Guardar
@@ -71,6 +75,8 @@ function CategoryRow({ category }: { category: ExpenseCategory }) {
       <Switch
         label={category.is_active ? 'Activa' : 'Inactiva'}
         checked={category.is_active}
+        loading={savingSwitch}
+        disabled={savingName}
         onCheckedChange={(is_active) => save.mutate({ id: category.id, name: category.name, is_active })}
       />
     </li>

@@ -4,7 +4,7 @@ import { Pencil, UserCog, UserPlus } from 'lucide-react'
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Spinner } from '@/components/ui/spinner'
+import { ListSkeleton } from '@/components/ui/skeleton'
 import { requireModule } from '@/features/auth/require-module'
 import { useStaff } from '@/features/auth/use-staff'
 import { StaffSheet } from '@/features/staff/components/staff-sheet'
@@ -42,7 +42,7 @@ function StaffScreen() {
       </header>
 
       {isPending ? (
-        <Spinner />
+        <ListSkeleton rows={5} />
       ) : (
         <ul className="flex flex-col gap-2">
           {members.map((member) => (

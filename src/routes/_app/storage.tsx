@@ -4,8 +4,9 @@ import { Database, Download, HardDrive, Images, ShieldCheck, Trash2 } from 'luci
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Field, SelectInput, TextInput } from '@/components/ui/field'
-import { Spinner } from '@/components/ui/spinner'
+import { Field, TextInput } from '@/components/ui/field'
+import { Select } from '@/components/ui/select'
+import { CardsSkeleton, StatsSkeleton } from '@/components/ui/skeleton'
 import { requireModule } from '@/features/auth/require-module'
 import { downloadBackup } from '@/features/storage/backup'
 import { MonthlyHistory } from '@/features/storage/components/monthly-history'
@@ -101,7 +102,7 @@ function StorageScreen() {
       </header>
 
       {isPending ? (
-        <Spinner />
+        <CardsSkeleton />
       ) : isError || !usage ? (
         <p className="p-8 text-center text-danger">No se pudo consultar el espacio. Intenta de nuevo.</p>
       ) : (
@@ -160,7 +161,7 @@ function UsageSection({ usage }: { usage: StorageUsage }) {
           Fotos (productos y recibos)
         </h2>
         {media.isPending ? (
-          <Spinner />
+          <StatsSkeleton tiles={2} className="lg:grid-cols-2" />
         ) : media.isError || !media.data ? (
           <p className="text-sm text-fg-subtle">No se pudo consultar el espacio de fotos en este momento.</p>
         ) : (
@@ -312,16 +313,14 @@ function CleanupSection({ usage }: { usage: StorageUsage }) {
           <li className="flex flex-col gap-2">
             <Field label="1. Limpiar hasta el mes de (incluido)">
               {(props) => (
-                <SelectInput {...props} value={before} onChange={(e) => setBefore(e.target.value)}>
-                  <option value="" disabled>
-                    Elegir mes…
-                  </option>
-                  {options.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </SelectInput>
+                <Select
+                  {...props}
+                  placeholder="Elegir mes…"
+                  value={before}
+                  onValueChange={setBefore}
+                  searchable={false}
+                  options={options}
+                />
               )}
             </Field>
             {before && (

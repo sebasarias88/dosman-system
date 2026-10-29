@@ -3,7 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Spinner } from '@/components/ui/spinner'
+import { PageSkeleton } from '@/components/ui/skeleton'
 import { staffContextQuery } from '@/features/auth/auth-api'
 import { queryClient } from '@/lib/query-client'
 import { supabase } from '@/lib/supabase'
@@ -13,11 +13,7 @@ const router = createRouter({
   routeTree,
   context: { queryClient },
   defaultPreload: 'intent',
-  defaultPendingComponent: () => (
-    <div className="grid h-full place-items-center text-fg-subtle">
-      <Spinner />
-    </div>
-  ),
+  defaultPendingComponent: PageSkeleton,
 })
 
 declare module '@tanstack/react-router' {

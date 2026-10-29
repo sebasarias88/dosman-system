@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowUpRight, TriangleAlert } from 'lucide-react'
+import { StatsSkeleton } from '@/components/ui/skeleton'
 import { modulesFor } from '@/config/modules'
 import { alertCountsQuery } from '@/features/activity/activity-api'
 import { useStaff } from '@/features/auth/use-staff'
@@ -36,8 +37,9 @@ function greeting(): string {
 /** Today at a glance for owners and admins: sales of both branches and alerts. */
 function TodaySummary() {
   const today = businessToday()
-  const { data } = useQuery(overviewQuery({ branchId: null, from: today, to: today }))
+  const { data, isPending } = useQuery(overviewQuery({ branchId: null, from: today, to: today }))
   const { data: alerts } = useQuery(alertCountsQuery({ from: today, to: today, branchId: null }))
+  if (isPending) return <StatsSkeleton className="sm:grid-cols-2 xl:grid-cols-4" />
   if (!data) return null
   const alertCount = (alerts?.warning ?? 0) + (alerts?.critical ?? 0)
 

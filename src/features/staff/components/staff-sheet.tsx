@@ -3,7 +3,8 @@ import { Eye, EyeOff, KeyRound } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Field, SelectInput, Switch, TextInput } from '@/components/ui/field'
+import { Field, Switch, TextInput } from '@/components/ui/field'
+import { Select } from '@/components/ui/select'
 import { Sheet } from '@/components/ui/sheet'
 import { useStaff } from '@/features/auth/use-staff'
 import type { AppRole } from '@/types/app'
@@ -184,33 +185,24 @@ export function StaffSheet({ member, onClose }: StaffSheetProps) {
         )}
         <Field label="Rol" hint={ROLE_HELP[role]}>
           {(props) => (
-            <SelectInput
+            <Select
               {...props}
               value={role}
               disabled={isSelf}
-              onChange={(e) => setRole(e.target.value as AppRole)}
-            >
-              {ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {ROLE_LABELS[r]}
-                </option>
-              ))}
-            </SelectInput>
+              onValueChange={(next) => setRole(next as AppRole)}
+              options={ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
+            />
           )}
         </Field>
         {needsBranch && (
           <Field label="Sede donde trabaja">
             {(props) => (
-              <SelectInput {...props} value={branchId} onChange={(e) => setBranchId(e.target.value)}>
-                <option value="" disabled>
-                  Elegir…
-                </option>
-                {branchOptions.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </SelectInput>
+              <Select
+                {...props}
+                value={branchId}
+                onValueChange={setBranchId}
+                options={branchOptions.map((b) => ({ value: b.id, label: b.name }))}
+              />
             )}
           </Field>
         )}

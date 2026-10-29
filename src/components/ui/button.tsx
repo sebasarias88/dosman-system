@@ -41,16 +41,30 @@ export function Button({
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cn(
-        'inline-flex select-none items-center justify-center gap-2 rounded-xl font-medium',
+        'relative inline-flex select-none items-center justify-center gap-2 rounded-xl font-medium',
         'transition-[background-color,filter,transform] duration-150 active:scale-[0.98]',
-        'disabled:pointer-events-none disabled:opacity-50',
+        'disabled:pointer-events-none',
+        // While loading the button stays fully visible (only blocked) so the spinner reads as "working".
+        loading ? 'cursor-progress' : 'disabled:opacity-50',
         VARIANTS[variant],
         SIZES[size],
         className,
       )}
       {...props}
     >
-      {loading ? <Spinner className="size-5" /> : children}
+      {loading ? (
+        <>
+          {/* The label stays in place (invisible) so the button keeps its width. */}
+          <span className="invisible inline-flex items-center gap-2" aria-hidden>
+            {children}
+          </span>
+          <span className="absolute inset-0 grid place-items-center">
+            <Spinner className="size-5" />
+          </span>
+        </>
+      ) : (
+        children
+      )}
     </button>
   )
 }

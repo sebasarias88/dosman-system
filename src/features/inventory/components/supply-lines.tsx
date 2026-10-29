@@ -1,6 +1,7 @@
 import { Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { MoneyInput, QuantityInput, SelectInput } from '@/components/ui/field'
+import { MoneyInput, QuantityInput } from '@/components/ui/field'
+import { Select } from '@/components/ui/select'
 import type { Supply } from '@/features/catalog/types'
 import { formatStock, UNITS } from '@/features/catalog/units'
 import { cn } from '@/lib/cn'
@@ -84,20 +85,21 @@ export function SupplyLines({
             )}
           >
             <div className="col-span-2 sm:col-span-1">
-              <SelectInput
+              <Select
                 aria-label="Insumo"
+                placeholder="Elegir insumo…"
                 value={line.supplyId}
-                onChange={(e) => patch(line.key, { supplyId: e.target.value })}
-              >
-                <option value="" disabled>
-                  Elegir insumo…
-                </option>
-                {supplies.map((s) => (
-                  <option key={s.id} value={s.id} disabled={used.has(s.id) && s.id !== line.supplyId}>
-                    {s.name}
-                  </option>
-                ))}
-              </SelectInput>
+                onValueChange={(supplyId) => patch(line.key, { supplyId })}
+                options={supplies.map((s) => {
+                  const taken = used.has(s.id) && s.id !== line.supplyId
+                  return {
+                    value: s.id,
+                    label: s.name,
+                    hint: taken ? 'Ya está en la lista' : undefined,
+                    disabled: taken,
+                  }
+                })}
+              />
               {supply && stock !== undefined && (
                 <p className={cn('mt-1 px-1 text-xs', tooMuch ? 'text-warning' : 'text-fg-subtle')}>
                   Hay {formatStock(supply.unit, stock)}

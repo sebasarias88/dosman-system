@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { CircleAlert, Info, ScrollText, TriangleAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TextInput } from '@/components/ui/field'
-import { Spinner } from '@/components/ui/spinner'
+import { ListSkeleton } from '@/components/ui/skeleton'
 import {
   activityQuery,
   alertCountsQuery,
@@ -223,7 +223,7 @@ function ActivityScreen() {
       </div>
 
       {list.isPending ? (
-        <Spinner />
+        <ListSkeleton rows={8} />
       ) : list.isError ? (
         <p className="p-8 text-center text-danger">No se pudo cargar la actividad. Intenta de nuevo.</p>
       ) : entries.length === 0 ? (

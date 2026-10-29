@@ -15,10 +15,12 @@ export function useExpenseMutation<TInput, TResult>(
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn,
-    onSuccess: (result) => {
-      void queryClient.invalidateQueries({ queryKey: expenseKeys.all })
+    // Waits for the expense lists so the switches and the list never show the
+    // old value after the spinner stops.
+    onSuccess: async (result) => {
       void queryClient.invalidateQueries({ queryKey: ['reports'] })
       void queryClient.invalidateQueries({ queryKey: salesKeys.all })
+      await queryClient.invalidateQueries({ queryKey: expenseKeys.all })
       if (successMessage) {
         toast.success(typeof successMessage === 'function' ? successMessage(result) : successMessage)
       }

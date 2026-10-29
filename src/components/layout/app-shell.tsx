@@ -1,9 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useMatches, useNavigate } from '@tanstack/react-router'
 import { CircleHelp, LogOut, Menu, X } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import { Logo } from '@/components/brand/logo'
 import { Button } from '@/components/ui/button'
+import { Select } from '@/components/ui/select'
 import { MODULE_GROUP_LABELS, modulesFor, type ModuleGroup } from '@/config/modules'
 import { setActiveBranchId } from '@/features/auth/active-branch'
 import { signOut } from '@/features/auth/auth-api'
@@ -53,6 +54,7 @@ function Navigation({ onNavigate }: { onNavigate?: () => void }) {
 
 function BranchSwitcher() {
   const { branches, activeBranch } = useStaff()
+  const id = useId()
   if (!activeBranch) return null
 
   if (branches.length < 2) {
@@ -65,20 +67,18 @@ function BranchSwitcher() {
   }
 
   return (
-    <label className="block">
-      <span className="mb-1 block px-1 text-xs text-fg-subtle">Sede</span>
-      <select
+    <div>
+      <label htmlFor={id} className="mb-1 block px-1 text-xs text-fg-subtle">
+        Sede
+      </label>
+      <Select
+        id={id}
+        className="text-sm"
         value={activeBranch.id}
-        onChange={(e) => setActiveBranchId(e.target.value)}
-        className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3 text-sm"
-      >
-        {branches.map((b) => (
-          <option key={b.id} value={b.id}>
-            {b.name}
-          </option>
-        ))}
-      </select>
-    </label>
+        onValueChange={setActiveBranchId}
+        options={branches.map((b) => ({ value: b.id, label: b.name }))}
+      />
+    </div>
   )
 }
 
@@ -87,10 +87,17 @@ function UserCard() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
 
+  const [signingOut, setSigningOut] = useState(false)
+
   async function handleSignOut() {
-    await signOut()
-    queryClient.clear()
-    await navigate({ to: '/login', search: { redirect: undefined } })
+    setSigningOut(true)
+    try {
+      await signOut()
+      queryClient.clear()
+      await navigate({ to: '/login', search: { redirect: undefined } })
+    } finally {
+      setSigningOut(false)
+    }
   }
 
   return (
@@ -102,7 +109,13 @@ function UserCard() {
         <p className="truncate text-sm font-medium">{profile.full_name}</p>
         <p className="text-xs text-fg-subtle">{ROLE_LABELS[profile.role]}</p>
       </div>
-      <Button variant="ghost" size="icon" aria-label="Cerrar sesión" onClick={() => void handleSignOut()}>
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label="Cerrar sesión"
+        loading={signingOut}
+        onClick={() => void handleSignOut()}
+      >
         <LogOut className="size-5" aria-hidden />
       </Button>
     </div>

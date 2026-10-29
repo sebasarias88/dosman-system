@@ -1,6 +1,7 @@
 import { Plus, Trash2 } from 'lucide-react'
 import { useId } from 'react'
-import { QuantityInput, SelectInput } from '@/components/ui/field'
+import { QuantityInput } from '@/components/ui/field'
+import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/format'
 import { summarizeCost } from '../costing'
@@ -71,23 +72,23 @@ export function RecipeEditor({ lines, onChange, supplies, suppliesById, price }:
               key={line.key}
               className="grid grid-cols-[1fr_7.5rem_auto] items-center gap-2 sm:grid-cols-[1fr_8rem_5.5rem_auto]"
             >
-              <SelectInput
+              <Select
                 aria-label="Insumo"
+                placeholder="Elegir insumo…"
                 value={line.supply_id}
-                onChange={(e) => update(line.key, { supply_id: e.target.value })}
-              >
-                <option value="" disabled>
-                  Elegir insumo…
-                </option>
-                {activeSupplies.map((s) => (
-                  <option key={s.id} value={s.id} disabled={usedIds.has(s.id) && s.id !== line.supply_id}>
-                    {s.name}
-                  </option>
-                ))}
-                {supply && !supply.is_active && (
-                  <option value={supply.id}>{supply.name} (desactivado)</option>
-                )}
-              </SelectInput>
+                onValueChange={(supply_id) => update(line.key, { supply_id })}
+                options={[
+                  ...activeSupplies.map((s) => ({
+                    value: s.id,
+                    label: s.name,
+                    hint: usedIds.has(s.id) && s.id !== line.supply_id ? 'Ya está en la receta' : undefined,
+                    disabled: usedIds.has(s.id) && s.id !== line.supply_id,
+                  })),
+                  ...(supply && !supply.is_active
+                    ? [{ value: supply.id, label: `${supply.name} (desactivado)` }]
+                    : []),
+                ]}
+              />
               <QuantityInput
                 aria-label="Cantidad"
                 value={line.quantity}

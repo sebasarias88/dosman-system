@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { TextInput } from '@/components/ui/field'
 import { ReasonDialog } from '@/components/ui/reason-dialog'
-import { Spinner } from '@/components/ui/spinner'
+import { ListSkeleton, Skeleton } from '@/components/ui/skeleton'
 import { useStaff } from '@/features/auth/use-staff'
 import { cn } from '@/lib/cn'
 import { formatCurrency } from '@/lib/format'
@@ -95,14 +95,29 @@ export function ExpensesTab() {
       <div className="grid gap-3 lg:grid-cols-[18rem_1fr]">
         <div className="rounded-card border border-line bg-surface p-5">
           <p className="text-sm text-fg-muted">Gastos del mes</p>
-          <p className="text-3xl font-semibold tabular-nums">{formatCurrency(total)}</p>
-          <p className="mt-1 text-sm text-fg-subtle">
-            {active.length} {active.length === 1 ? 'gasto' : 'gastos'}
-          </p>
+          {isPending ? (
+            <>
+              <Skeleton className="mt-1.5 h-8 w-36" />
+              <Skeleton className="mt-2 h-4 w-16" />
+            </>
+          ) : (
+            <>
+              <p className="text-3xl font-semibold tabular-nums">{formatCurrency(total)}</p>
+              <p className="mt-1 text-sm text-fg-subtle">
+                {active.length} {active.length === 1 ? 'gasto' : 'gastos'}
+              </p>
+            </>
+          )}
         </div>
         <div className="rounded-card border border-line bg-surface p-5">
           <h2 className="mb-3 text-sm text-fg-muted">Por categoría</h2>
-          {byCategory.length === 0 ? (
+          {isPending ? (
+            <div className="flex flex-col gap-3">
+              <Skeleton className="h-3 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+              <Skeleton className="h-3 w-2/3" />
+            </div>
+          ) : byCategory.length === 0 ? (
             <p className="text-sm text-fg-subtle">Sin gastos en este mes.</p>
           ) : (
             <ul className="flex flex-col gap-2.5">
@@ -127,7 +142,7 @@ export function ExpensesTab() {
       </div>
 
       {isPending ? (
-        <Spinner />
+        <ListSkeleton />
       ) : visible.length === 0 ? (
         <p className="p-8 text-center text-fg-muted">No hay gastos registrados en este mes.</p>
       ) : (

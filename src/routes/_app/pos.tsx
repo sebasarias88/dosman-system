@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/field'
 import { Sheet } from '@/components/ui/sheet'
-import { Spinner } from '@/components/ui/spinner'
+import { ListSkeleton, TilesSkeleton } from '@/components/ui/skeleton'
 import { requireModule } from '@/features/auth/require-module'
 import { useStaff } from '@/features/auth/use-staff'
 import { catalogQuery } from '@/features/catalog/catalog-api'
@@ -77,7 +77,7 @@ function PosScreen() {
   })
 
   if (!activeBranch) return null
-  if (isPending) return <Spinner className="m-10" />
+  if (isPending) return <TilesSkeleton className="p-4" />
   if (!session) {
     return (
       <div className="h-full overflow-y-auto p-6 lg:p-10">
@@ -264,7 +264,7 @@ function Pos({ branch, sessionId }: { branch: Branch; sessionId: string }) {
     void queryClient.invalidateQueries({ queryKey: salesKeys.all })
   }
 
-  if (!catalog) return <Spinner className="m-10" />
+  if (!catalog) return <TilesSkeleton className="p-4" />
 
   const count = cartCount(lines)
   const views: [View, string][] = [
@@ -325,9 +325,12 @@ function Pos({ branch, sessionId }: { branch: Branch; sessionId: string }) {
 
         <div className="min-h-0 flex-1">
           {view === 'new' && <ProductGrid catalog={catalog} onPick={(product) => pick(product, catalog)} />}
-          {view === 'open' && (
-            <OpenOrdersList orders={openOrders} onSelect={(order) => setDetailId(order.id)} />
-          )}
+          {view === 'open' &&
+            (ordersLoaded ? (
+              <OpenOrdersList orders={openOrders} onSelect={(order) => setDetailId(order.id)} />
+            ) : (
+              <TilesSkeleton tiles={6} className="sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3" />
+            ))}
           {view === 'recent' && <RecentList sessionId={sessionId} onReprint={printReceipt} />}
         </div>
       </section>
@@ -445,6 +448,7 @@ function Pos({ branch, sessionId }: { branch: Branch; sessionId: string }) {
 }
 
 function RecentList({ sessionId, onReprint }: { sessionId: string; onReprint: (order: Order) => void }) {
-  const { data: orders = [] } = useQuery(recentOrdersQuery(sessionId))
-  return <RecentOrders orders={orders} onReprint={onReprint} />
+  const { data: orders, isPending } = useQuery(recentOrdersQuery(sessionId))
+  if (isPending) return <ListSkeleton rows={5} />
+  return <RecentOrders orders={orders ?? []} onReprint={onReprint} />
 }

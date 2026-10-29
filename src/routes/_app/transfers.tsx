@@ -4,10 +4,11 @@ import { ArrowLeftRight, PackageCheck, Send, Truck } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Badge, type BadgeTone } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Field, QuantityInput, SelectInput, TextArea } from '@/components/ui/field'
+import { Field, QuantityInput, TextArea } from '@/components/ui/field'
+import { Select } from '@/components/ui/select'
 import { ReasonDialog } from '@/components/ui/reason-dialog'
 import { Sheet } from '@/components/ui/sheet'
-import { Spinner } from '@/components/ui/spinner'
+import { ListSkeleton } from '@/components/ui/skeleton'
 import { requireModule } from '@/features/auth/require-module'
 import { useStaff } from '@/features/auth/use-staff'
 import { catalogQuery } from '@/features/catalog/catalog-api'
@@ -109,7 +110,7 @@ function Transfers({ branch }: { branch: Branch }) {
           Historial
         </h2>
         {isPending ? (
-          <Spinner />
+          <ListSkeleton rows={4} />
         ) : transfers.length === 0 ? (
           <p className="p-8 text-center text-fg-muted">Aún no hay envíos.</p>
         ) : (
@@ -181,7 +182,7 @@ function Transfers({ branch }: { branch: Branch }) {
 
 function NewTransferSheet({ branch, onClose }: { branch: Branch; onClose: () => void }) {
   const { data: catalog } = useQuery(catalogQuery)
-  const { data: branches = [] } = useQuery(branchesQuery)
+  const { data: branches = [], isLoading: loadingBranches } = useQuery(branchesQuery)
   const { data: stock = [] } = useQuery(stockQuery(branch.id))
   const destinations = branches.filter((b) => b.id !== branch.id)
   const [toBranchId, setToBranchId] = useState('')
@@ -236,13 +237,13 @@ function NewTransferSheet({ branch, onClose }: { branch: Branch; onClose: () => 
         {destinations.length > 1 && (
           <Field label="Para">
             {(props) => (
-              <SelectInput {...props} value={destination} onChange={(e) => setToBranchId(e.target.value)}>
-                {destinations.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </SelectInput>
+              <Select
+                {...props}
+                value={destination}
+                onValueChange={setToBranchId}
+                loading={loadingBranches}
+                options={destinations.map((b) => ({ value: b.id, label: b.name }))}
+              />
             )}
           </Field>
         )}
